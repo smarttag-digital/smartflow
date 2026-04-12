@@ -44,7 +44,7 @@ export default function PipelinePage() {
               <Droppable key={stage} droppableId={stage}>
                 {(provided, snapshot) => (
                   <div
-                    ref={provided.ref}
+                    ref={provided.innerRef}
                     {...provided.droppableProps}
                     className={`flex-shrink-0 w-[260px] flex flex-col rounded-xl border transition-colors ${
                       snapshot.isDraggingOver ? "border-primary/40 bg-primary/5" : "border-border/30 bg-muted/10"
@@ -61,7 +61,7 @@ export default function PipelinePage() {
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
                             {(provided, snapshot) => (
                               <div
-                                ref={provided.ref}
+                                ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
                                 className={`p-3 rounded-lg border transition-all ${
