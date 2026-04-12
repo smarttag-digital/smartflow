@@ -7,12 +7,13 @@ import {
   Kanban,
   BarChart3,
   Download,
-  Settings,
   Zap,
   Menu,
   X,
   ChevronLeft,
+  LogOut,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/smart_tag_logo.png";
 
 const NAV_ITEMS = [
@@ -28,6 +29,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
+
+  const initials = user?.user_metadata?.full_name
+    ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
+    : user?.email?.slice(0, 2).toUpperCase() ?? "??";
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -96,15 +102,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        {/* Footer */}
-        {!collapsed && (
-          <div className="p-4 border-t border-border/30">
-            <div className="glass-card p-3 text-center">
-              <p className="text-xs text-muted-foreground">Plano Pro</p>
-              <p className="text-[10px] text-primary font-medium mt-0.5">8 de 50 leads</p>
-            </div>
-          </div>
-        )}
+        {/* Logout */}
+        <div className="p-3 border-t border-border/30">
+          <button
+            onClick={signOut}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors w-full ${collapsed ? "justify-center px-2" : ""}`}
+          >
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            {!collapsed && <span>Sair</span>}
+          </button>
+        </div>
       </aside>
 
       {/* Main */}
@@ -116,8 +123,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
           <div className="flex-1" />
           <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[200px]">
+              {user?.user_metadata?.full_name || user?.email}
+            </span>
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-              CT
+              {initials}
             </div>
           </div>
         </header>
