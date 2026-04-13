@@ -44,6 +44,7 @@ const App = () => (
             <Route path="/capture" element={<ProtectedLayout><CapturePage /></ProtectedLayout>} />
             <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
             <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
+            <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
