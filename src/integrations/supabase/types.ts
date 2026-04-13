@@ -94,7 +94,12 @@ export type Database = {
       leads: {
         Row: {
           assigned_to: string | null
+          business_type: string | null
+          commission_percent: number | null
+          commission_value: number | null
+          contract_duration: string | null
           created_at: string
+          deal_value: number | null
           email: string | null
           id: string
           interest: string | null
@@ -103,6 +108,7 @@ export type Database = {
           name: string
           notes: string | null
           phone: string
+          rent_value: number | null
           score: string
           source: string
           stage: string
@@ -112,7 +118,12 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          business_type?: string | null
+          commission_percent?: number | null
+          commission_value?: number | null
+          contract_duration?: string | null
           created_at?: string
+          deal_value?: number | null
           email?: string | null
           id?: string
           interest?: string | null
@@ -121,6 +132,7 @@ export type Database = {
           name: string
           notes?: string | null
           phone: string
+          rent_value?: number | null
           score?: string
           source?: string
           stage?: string
@@ -130,7 +142,12 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          business_type?: string | null
+          commission_percent?: number | null
+          commission_value?: number | null
+          contract_duration?: string | null
           created_at?: string
+          deal_value?: number | null
           email?: string | null
           id?: string
           interest?: string | null
@@ -139,6 +156,7 @@ export type Database = {
           name?: string
           notes?: string | null
           phone?: string
+          rent_value?: number | null
           score?: string
           source?: string
           stage?: string
@@ -156,6 +174,7 @@ export type Database = {
           phone: string | null
           updated_at: string
           user_id: string
+          whatsapp_template: string | null
         }
         Insert: {
           created_at?: string
@@ -164,6 +183,7 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_template?: string | null
         }
         Update: {
           created_at?: string
@@ -172,6 +192,7 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_template?: string | null
         }
         Relationships: []
       }
