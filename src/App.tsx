@@ -12,6 +12,7 @@ import PipelinePage from "@/pages/PipelinePage";
 import CapturePage from "@/pages/CapturePage";
 import ReportsPage from "@/pages/ReportsPage";
 import AutomationPage from "@/pages/AutomationPage";
+import SettingsPage from "@/pages/SettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
@@ -44,6 +45,7 @@ const App = () => (
             <Route path="/capture" element={<ProtectedLayout><CapturePage /></ProtectedLayout>} />
             <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
             <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
+            <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

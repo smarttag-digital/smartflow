@@ -14,27 +14,185 @@ export type Database = {
   }
   public: {
     Tables: {
+      automation_rules: {
+        Row: {
+          action: string
+          created_at: string
+          delay: string | null
+          enabled: boolean
+          id: string
+          message: string | null
+          name: string
+          trigger_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          delay?: string | null
+          enabled?: boolean
+          id?: string
+          message?: string | null
+          name: string
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          delay?: string | null
+          enabled?: boolean
+          id?: string
+          message?: string | null
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interactions: {
+        Row: {
+          created_at: string
+          direction: string
+          id: string
+          lead_id: string
+          message: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lead_id: string
+          message?: string | null
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          direction?: string
+          id?: string
+          lead_id?: string
+          message?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          assigned_to: string | null
+          business_type: string | null
+          commission_percent: number | null
+          commission_value: number | null
+          contract_duration: string | null
+          created_at: string
+          deal_value: number | null
+          email: string | null
+          id: string
+          interest: string | null
+          last_contact: string | null
+          last_response: string | null
+          name: string
+          notes: string | null
+          phone: string
+          rent_value: number | null
+          score: string
+          source: string
+          stage: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_type?: string | null
+          commission_percent?: number | null
+          commission_value?: number | null
+          contract_duration?: string | null
+          created_at?: string
+          deal_value?: number | null
+          email?: string | null
+          id?: string
+          interest?: string | null
+          last_contact?: string | null
+          last_response?: string | null
+          name: string
+          notes?: string | null
+          phone: string
+          rent_value?: number | null
+          score?: string
+          source?: string
+          stage?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          business_type?: string | null
+          commission_percent?: number | null
+          commission_value?: number | null
+          contract_duration?: string | null
+          created_at?: string
+          deal_value?: number | null
+          email?: string | null
+          id?: string
+          interest?: string | null
+          last_contact?: string | null
+          last_response?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string
+          rent_value?: number | null
+          score?: string
+          source?: string
+          stage?: string
+          tags?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           full_name: string
           id: string
+          phone: string | null
           updated_at: string
           user_id: string
+          whatsapp_template: string | null
         }
         Insert: {
           created_at?: string
           full_name?: string
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id: string
+          whatsapp_template?: string | null
         }
         Update: {
           created_at?: string
           full_name?: string
           id?: string
+          phone?: string | null
           updated_at?: string
           user_id?: string
+          whatsapp_template?: string | null
         }
         Relationships: []
       }
