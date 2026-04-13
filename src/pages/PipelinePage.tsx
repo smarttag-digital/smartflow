@@ -1,41 +1,27 @@
+import { useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { MessageSquare } from "lucide-react";
-import { useLeads, DbLead } from "@/hooks/useLeads";
-import { useProfile } from "@/hooks/useProfile";
-import { STAGE_LABELS, SCORE_CONFIG } from "@/data/mockData";
-import type { LeadStage, LeadScore } from "@/data/mockData";
+import {
+  MOCK_LEADS,
+  Lead,
+  LeadStage,
+  STAGE_LABELS,
+  SCORE_CONFIG,
+  getAlertLevel,
+  openWhatsApp,
+} from "@/data/mockData";
 
 const STAGES: LeadStage[] = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "fechamento"];
 
-function getAlertLevel(lead: DbLead): "red" | "yellow" | "none" {
-  const ref = lead.last_contact || lead.created_at;
-  if (!ref) return "none";
-  const h = Math.round((Date.now() - new Date(ref).getTime()) / 3600000);
-  if (!lead.last_response) {
-    if (h >= 48) return "red";
-    if (h >= 24) return "yellow";
-  }
-  return "none";
-}
-
 export default function PipelinePage() {
-  const { leads, loading, updateLead } = useLeads();
-  const { profile } = useProfile();
+  const [leads, setLeads] = useState<Lead[]>(MOCK_LEADS);
 
-  const onDragEnd = async (result: DropResult) => {
+  const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     const leadId = result.draggableId;
     const newStage = result.destination.droppableId as LeadStage;
-    await updateLead(leadId, { stage: newStage });
+    setLeads((prev) => prev.map((l) => (l.id === leadId ? { ...l, stage: newStage } : l)));
   };
-
-  const handleWhatsApp = (lead: DbLead) => {
-    const name = profile?.full_name || "Corretor";
-    const msg = `Olá, sou ${name} da imobiliária Smart Tag 👋\nVi seu interesse em ${lead.interest}.\nPosso te enviar algumas opções?`;
-    window.open(`https://wa.me/${lead.phone}?text=${encodeURIComponent(msg)}`, "_blank");
-  };
-
-  if (loading) return <div className="flex items-center justify-center h-64 text-muted-foreground">Carregando pipeline...</div>;
 
   return (
     <div className="h-full flex flex-col">
@@ -50,8 +36,8 @@ export default function PipelinePage() {
             const stageLeads = leads
               .filter((l) => l.stage === stage)
               .sort((a, b) => {
-                const order: Record<string, number> = { hot: 0, warm: 1, cold: 2 };
-                return (order[a.score] ?? 2) - (order[b.score] ?? 2);
+                const order = { hot: 0, warm: 1, cold: 2 };
+                return order[a.score] - order[b.score];
               });
 
             return (
@@ -71,7 +57,6 @@ export default function PipelinePage() {
                     <div className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]">
                       {stageLeads.map((lead, index) => {
                         const alert = getAlertLevel(lead);
-                        const scoreKey = lead.score as LeadScore;
                         return (
                           <Draggable key={lead.id} draggableId={lead.id} index={index}>
                             {(provided, snapshot) => (
@@ -91,20 +76,22 @@ export default function PipelinePage() {
                               >
                                 <div className="flex items-center justify-between mb-1.5">
                                   <p className="text-xs font-semibold text-foreground truncate flex-1">{lead.name}</p>
-                                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
-                                    scoreKey === "hot" ? "score-hot" : scoreKey === "warm" ? "score-warm" : "score-cold"
-                                  }`}>
-                                    {(SCORE_CONFIG[scoreKey] || SCORE_CONFIG.cold).emoji}
+                                  <span
+                                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                                      lead.score === "hot" ? "score-hot" : lead.score === "warm" ? "score-warm" : "score-cold"
+                                    }`}
+                                  >
+                                    {SCORE_CONFIG[lead.score].emoji}
                                   </span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground truncate mb-2">{lead.interest}</p>
                                 <div className="flex items-center justify-between">
-                                  {lead.tags?.slice(0, 1).map((tag) => (
+                                  {lead.tags.slice(0, 1).map((tag) => (
                                     <span key={tag} className="text-[9px] text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">{tag}</span>
                                   ))}
-                                  {(!lead.tags || lead.tags.length === 0) && <span />}
+                                  {lead.tags.length === 0 && <span />}
                                   <button
-                                    onClick={(e) => { e.stopPropagation(); handleWhatsApp(lead); }}
+                                    onClick={(e) => { e.stopPropagation(); openWhatsApp(lead.phone); }}
                                     className="whatsapp-btn p-1.5 rounded-md"
                                     title="WhatsApp"
                                   >

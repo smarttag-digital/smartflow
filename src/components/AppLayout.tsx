@@ -8,7 +8,6 @@ import {
   BarChart3,
   Download,
   Zap,
-  Settings,
   Menu,
   X,
   ChevronLeft,
@@ -24,7 +23,6 @@ const NAV_ITEMS = [
   { to: "/capture", icon: Download, label: "Entrada de Leads" },
   { to: "/reports", icon: BarChart3, label: "Relatórios" },
   { to: "/automation", icon: Zap, label: "Automação" },
-  { to: "/settings", icon: Settings, label: "Configurações" },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
