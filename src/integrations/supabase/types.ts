@@ -105,7 +105,10 @@ export type Database = {
           interest: string | null
           last_contact: string | null
           last_response: string | null
+          lost_reason: string | null
           name: string
+          next_action: string | null
+          next_action_date: string | null
           notes: string | null
           phone: string
           rent_value: number | null
@@ -129,7 +132,10 @@ export type Database = {
           interest?: string | null
           last_contact?: string | null
           last_response?: string | null
+          lost_reason?: string | null
           name: string
+          next_action?: string | null
+          next_action_date?: string | null
           notes?: string | null
           phone: string
           rent_value?: number | null
@@ -153,7 +159,10 @@ export type Database = {
           interest?: string | null
           last_contact?: string | null
           last_response?: string | null
+          lost_reason?: string | null
           name?: string
+          next_action?: string | null
+          next_action_date?: string | null
           notes?: string | null
           phone?: string
           rent_value?: number | null

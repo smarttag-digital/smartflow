@@ -23,6 +23,9 @@ export interface Lead {
   contract_duration: string;
   last_contact: string | null;
   last_response: string | null;
+  next_action: string;
+  next_action_date: string | null;
+  lost_reason: string;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -64,11 +67,30 @@ export const STAGE_OPTIONS = [
   { value: "visita", label: "Visita" },
   { value: "proposta", label: "Proposta" },
   { value: "fechamento", label: "Fechamento" },
+  { value: "lead_perdido", label: "Lead Perdido" },
 ];
 
 export const STAGE_LABELS: Record<string, string> = Object.fromEntries(
   STAGE_OPTIONS.map((s) => [s.value, s.label])
 );
+
+export const NEXT_ACTION_OPTIONS = [
+  { value: "", label: "Nenhuma" },
+  { value: "ligar", label: "Ligar" },
+  { value: "follow_up", label: "Follow-up" },
+  { value: "enviar_imoveis", label: "Enviar imóveis" },
+  { value: "agendar_visita", label: "Agendar visita" },
+  { value: "enviar_proposta", label: "Enviar proposta" },
+  { value: "retornar_contato", label: "Retornar contato" },
+];
+
+export const LOST_REASON_OPTIONS = [
+  { value: "comprou_com_outro", label: "Comprou com outro corretor" },
+  { value: "nao_quer", label: "Não quer mais" },
+  { value: "nao_respondeu", label: "Não respondeu" },
+  { value: "fora_do_perfil", label: "Fora do perfil" },
+  { value: "outro", label: "Outro motivo" },
+];
 
 export const SCORE_CONFIG: Record<string, { label: string; emoji: string }> = {
   hot: { label: "Quente", emoji: "🔥" },
@@ -77,6 +99,7 @@ export const SCORE_CONFIG: Record<string, { label: string; emoji: string }> = {
 };
 
 export function getAlertLevel(lead: Lead): "red" | "yellow" | "none" {
+  if (lead.stage === "lead_perdido" || lead.stage === "fechamento") return "none";
   const hoursAgo = (dateStr: string | null) => {
     if (!dateStr) return null;
     return Math.round((Date.now() - new Date(dateStr).getTime()) / 3600000);
@@ -93,6 +116,18 @@ export function getAlertLevel(lead: Lead): "red" | "yellow" | "none" {
     if (h !== null && h >= 24) return "yellow";
   }
   return "none";
+}
+
+export function isActionOverdue(lead: Lead): boolean {
+  if (!lead.next_action_date) return false;
+  return new Date(lead.next_action_date) < new Date();
+}
+
+export function isActionToday(lead: Lead): boolean {
+  if (!lead.next_action_date) return false;
+  const d = new Date(lead.next_action_date);
+  const now = new Date();
+  return d.toDateString() === now.toDateString();
 }
 
 export function openWhatsApp(phone: string, message?: string) {
@@ -128,7 +163,6 @@ export function useLeads() {
     fetchLeads();
   }, [fetchLeads]);
 
-  // Realtime subscription
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -169,7 +203,6 @@ export function useLeads() {
       toast.error("Erro ao atualizar lead");
       return false;
     }
-    toast.success("Lead atualizado!");
     return true;
   };
 
