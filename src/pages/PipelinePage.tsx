@@ -1,20 +1,39 @@
+import { useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
-import { MessageSquare } from "lucide-react";
-import { useLeads, Lead, STAGE_LABELS, SCORE_CONFIG, getAlertLevel, openWhatsApp, useProfile } from "@/hooks/useLeads";
-import { useAuth } from "@/contexts/AuthContext";
+import { MessageSquare, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  useLeads, useInteractions, Lead, STAGE_LABELS, SCORE_CONFIG, LOST_REASON_OPTIONS,
+  getAlertLevel, openWhatsApp,
+} from "@/hooks/useLeads";
 
-const STAGES = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "fechamento"];
+const STAGES = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "fechamento", "lead_perdido"];
 
 export default function PipelinePage() {
   const { leads, loading, updateLead } = useLeads();
-  const { profile } = useProfile();
-  const { user } = useAuth();
+  const [lostDialog, setLostDialog] = useState<{ leadId: string; fromStage: string } | null>(null);
+  const [lostReason, setLostReason] = useState("");
 
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     const leadId = result.draggableId;
     const newStage = result.destination.droppableId;
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead || lead.stage === newStage) return;
+
+    if (newStage === "lead_perdido") {
+      setLostDialog({ leadId, fromStage: lead.stage });
+      return;
+    }
+
     await updateLead(leadId, { stage: newStage });
+  };
+
+  const confirmLost = async () => {
+    if (!lostDialog || !lostReason) return;
+    await updateLead(lostDialog.leadId, { stage: "lead_perdido", lost_reason: lostReason });
+    setLostDialog(null);
+    setLostReason("");
   };
 
   if (loading) {
@@ -42,15 +61,21 @@ export default function PipelinePage() {
                 return (order[a.score] ?? 3) - (order[b.score] ?? 3);
               });
 
+            const isLost = stage === "lead_perdido";
+
             return (
               <Droppable key={stage} droppableId={stage}>
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.droppableProps}
-                    className={`flex-shrink-0 w-[260px] flex flex-col rounded-xl border transition-colors ${
-                      snapshot.isDraggingOver ? "border-primary/40 bg-primary/5" : "border-border/30 bg-muted/10"
+                    className={`flex-shrink-0 w-[240px] flex flex-col rounded-xl border transition-colors ${
+                      snapshot.isDraggingOver ? "border-primary/40 bg-primary/5"
+                      : isLost ? "border-destructive/20 bg-destructive/5"
+                      : "border-border/30 bg-muted/10"
                     }`}>
                     <div className="p-3 border-b border-border/20 flex items-center justify-between">
-                      <h3 className="text-xs font-semibold text-foreground">{STAGE_LABELS[stage] || stage}</h3>
+                      <h3 className={`text-xs font-semibold ${isLost ? "text-destructive" : "text-foreground"}`}>
+                        {STAGE_LABELS[stage] || stage}
+                      </h3>
                       <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded-full">{stageLeads.length}</span>
                     </div>
                     <div className="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]">
@@ -62,6 +87,7 @@ export default function PipelinePage() {
                               <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                 className={`p-3 rounded-lg border transition-all ${
                                   snapshot.isDragging ? "shadow-xl border-primary/40 bg-card"
+                                  : isLost ? "border-destructive/20 bg-card/40 opacity-70"
                                   : alert === "red" ? "alert-red bg-card/60"
                                   : alert === "yellow" ? "alert-yellow bg-card/60"
                                   : "border-border/30 bg-card/60 hover:border-border/50"
@@ -75,14 +101,21 @@ export default function PipelinePage() {
                                   </span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground truncate mb-2">{lead.interest}</p>
+                                {isLost && lead.lost_reason && (
+                                  <p className="text-[9px] text-destructive mb-2">
+                                    {LOST_REASON_OPTIONS.find(o => o.value === lead.lost_reason)?.label || lead.lost_reason}
+                                  </p>
+                                )}
                                 <div className="flex items-center justify-between">
                                   <span className="text-[9px] text-primary/70 bg-primary/10 px-1.5 py-0.5 rounded">
                                     {lead.business_type === "locacao" ? "Locação" : "Venda"}
                                   </span>
-                                  <button onClick={(e) => { e.stopPropagation(); openWhatsApp(lead.phone); }}
-                                    className="whatsapp-btn p-1.5 rounded-md" title="WhatsApp">
-                                    <MessageSquare className="w-3 h-3" />
-                                  </button>
+                                  {!isLost && (
+                                    <button onClick={(e) => { e.stopPropagation(); openWhatsApp(lead.phone); }}
+                                      className="whatsapp-btn p-1.5 rounded-md" title="WhatsApp">
+                                      <MessageSquare className="w-3 h-3" />
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             )}
@@ -98,6 +131,37 @@ export default function PipelinePage() {
           })}
         </div>
       </DragDropContext>
+
+      {/* Lost reason dialog */}
+      <AnimatePresence>
+        {lostDialog && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => { setLostDialog(null); setLostReason(""); }}>
+            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              className="glass-card p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-foreground">Motivo da Perda</h3>
+                <button onClick={() => { setLostDialog(null); setLostReason(""); }}><X className="w-5 h-5 text-muted-foreground" /></button>
+              </div>
+              <div className="space-y-2 mb-4">
+                {LOST_REASON_OPTIONS.map((o) => (
+                  <button key={o.value} onClick={() => setLostReason(o.value)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition-colors ${lostReason === o.value ? "bg-primary/15 text-primary border-primary/30" : "border-border/50 text-foreground hover:bg-muted/50"}`}>
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { setLostDialog(null); setLostReason(""); }}
+                  className="flex-1 py-2 rounded-lg text-sm border border-border/50 text-muted-foreground">Cancelar</button>
+                <button onClick={confirmLost} disabled={!lostReason}
+                  className="flex-1 py-2 rounded-lg text-sm bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 disabled:opacity-50">Confirmar</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

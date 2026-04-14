@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import {
   Users, UserPlus, AlertTriangle, Flame, TrendingUp, Clock, MessageSquare, Eye, ArrowRight,
+  CalendarClock, XCircle,
 } from "lucide-react";
-import { useLeads, getAlertLevel, openWhatsApp, SCORE_CONFIG, SOURCE_LABELS } from "@/hooks/useLeads";
+import { useLeads, getAlertLevel, openWhatsApp, SCORE_CONFIG, SOURCE_LABELS, NEXT_ACTION_OPTIONS, isActionOverdue, isActionToday } from "@/hooks/useLeads";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useNavigate } from "react-router-dom";
 
@@ -15,19 +16,23 @@ export default function DashboardPage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const totalLeads = leads.length;
-  const newToday = leads.filter((l) => new Date(l.created_at) >= today).length;
-  const noResponse = leads.filter((l) => getAlertLevel(l) !== "none").length;
-  const hotLeads = leads.filter((l) => l.score === "hot").length;
-  const closedLeads = leads.filter((l) => l.stage === "fechamento").length;
+  const activeLeads = leads.filter(l => l.stage !== "lead_perdido");
+  const totalLeads = activeLeads.length;
+  const newToday = activeLeads.filter((l) => new Date(l.created_at) >= today).length;
+  const noResponse = activeLeads.filter((l) => getAlertLevel(l) !== "none").length;
+  const hotLeads = activeLeads.filter((l) => l.score === "hot").length;
+  const closedLeads = activeLeads.filter((l) => l.stage === "fechamento").length;
+  const lostLeads = leads.filter(l => l.stage === "lead_perdido").length;
   const conversionRate = totalLeads > 0 ? Math.round((closedLeads / totalLeads) * 100) : 0;
 
-  const urgentLeads = leads.filter((l) => getAlertLevel(l) === "red");
-  const warningLeads = leads.filter((l) => getAlertLevel(l) === "yellow");
-  const hotLeadsList = leads.filter((l) => l.score === "hot");
+  const overdueActions = activeLeads.filter(l => isActionOverdue(l));
+  const todayActions = activeLeads.filter(l => isActionToday(l) && !isActionOverdue(l));
+  const urgentLeads = activeLeads.filter((l) => getAlertLevel(l) === "red");
+  const warningLeads = activeLeads.filter((l) => getAlertLevel(l) === "yellow");
+  const hotLeadsList = activeLeads.filter((l) => l.score === "hot");
 
   const sourceData = Object.entries(
-    leads.reduce((acc, l) => {
+    activeLeads.reduce((acc, l) => {
       const label = SOURCE_LABELS[l.source] || l.source;
       acc[label] = (acc[label] || 0) + 1;
       return acc;
@@ -35,11 +40,11 @@ export default function DashboardPage() {
   ).map(([name, value]) => ({ name, value }));
 
   const stageData = [
-    { name: "Novo", value: leads.filter((l) => l.stage === "novo").length },
-    { name: "Atendimento", value: leads.filter((l) => l.stage === "atendimento").length },
-    { name: "Envio", value: leads.filter((l) => l.stage === "envio_imoveis").length },
-    { name: "Visita", value: leads.filter((l) => l.stage === "visita").length },
-    { name: "Proposta", value: leads.filter((l) => l.stage === "proposta").length },
+    { name: "Novo", value: activeLeads.filter((l) => l.stage === "novo").length },
+    { name: "Atendimento", value: activeLeads.filter((l) => l.stage === "atendimento").length },
+    { name: "Envio", value: activeLeads.filter((l) => l.stage === "envio_imoveis").length },
+    { name: "Visita", value: activeLeads.filter((l) => l.stage === "visita").length },
+    { name: "Proposta", value: activeLeads.filter((l) => l.stage === "proposta").length },
     { name: "Fechamento", value: closedLeads },
   ];
 
@@ -50,8 +55,8 @@ export default function DashboardPage() {
     { label: "Novos Hoje", value: newToday, icon: UserPlus, color: "text-success" },
     { label: "Sem Resposta", value: noResponse, icon: AlertTriangle, color: "text-destructive", urgent: noResponse > 0 },
     { label: "Leads Quentes", value: hotLeads, icon: Flame, color: "text-hot" },
-    { label: "Taxa Conversão", value: `${conversionRate}%`, icon: TrendingUp, color: "text-primary" },
-    { label: "Fechamentos", value: closedLeads, icon: Clock, color: "text-success" },
+    { label: "Ações Pendentes", value: overdueActions.length + todayActions.length, icon: CalendarClock, color: "text-warning", urgent: overdueActions.length > 0 },
+    { label: "Leads Perdidos", value: lostLeads, icon: XCircle, color: "text-destructive" },
   ];
 
   if (loading) {
@@ -82,17 +87,57 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Tasks Today + Overdue */}
+      {(overdueActions.length > 0 || todayActions.length > 0) && (
+        <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="glass-card p-5">
+          <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
+            <CalendarClock className="w-4 h-4 text-primary" /> Minhas Tarefas do Dia
+          </h2>
+          <div className="space-y-2">
+            {overdueActions.map((lead) => (
+              <div key={lead.id} className="flex items-center gap-3 p-3 rounded-lg alert-red">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{lead.name}</p>
+                  <p className="text-xs text-destructive">
+                    ⏰ {NEXT_ACTION_OPTIONS.find(o => o.value === lead.next_action)?.label} — Atrasada
+                  </p>
+                </div>
+                <button onClick={() => openWhatsApp(lead.phone)}
+                  className="whatsapp-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" /> Agir
+                </button>
+              </div>
+            ))}
+            {todayActions.map((lead) => (
+              <div key={lead.id} className="flex items-center gap-3 p-3 rounded-lg bg-accent/10 border border-accent/20">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">{lead.name}</p>
+                  <p className="text-xs text-accent-foreground">
+                    📋 {NEXT_ACTION_OPTIONS.find(o => o.value === lead.next_action)?.label}
+                    {lead.next_action_date && ` — ${new Date(lead.next_action_date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`}
+                  </p>
+                </div>
+                <button onClick={() => openWhatsApp(lead.phone)}
+                  className="whatsapp-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
+                  <MessageSquare className="w-3 h-3" /> Agir
+                </button>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       {/* Priority actions + Leads at risk */}
       <div className="grid lg:grid-cols-2 gap-4">
         <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="glass-card p-5">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
-            <Flame className="w-4 h-4 text-primary" /> Ações Prioritárias do Dia
+            <Flame className="w-4 h-4 text-primary" /> Ações Prioritárias
           </h2>
           <div className="space-y-2">
             {hotLeadsList.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-6">Nenhum lead quente no momento</p>
             ) : (
-              hotLeadsList.slice(0, 3).map((lead) => (
+              hotLeadsList.slice(0, 4).map((lead) => (
                 <div key={lead.id} className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{lead.name}</p>
@@ -103,7 +148,7 @@ export default function DashboardPage() {
                   </span>
                   <button onClick={() => openWhatsApp(lead.phone)}
                     className="whatsapp-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" /> Responder
+                    <MessageSquare className="w-3 h-3" /> Agir
                   </button>
                 </div>
               ))
@@ -117,7 +162,7 @@ export default function DashboardPage() {
 
         <motion.div {...fadeUp} transition={{ delay: 0.25 }} className="glass-card p-5">
           <h2 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-4">
-            <AlertTriangle className="w-4 h-4 text-destructive" /> Leads em Risco de Perda
+            <AlertTriangle className="w-4 h-4 text-destructive" /> Leads em Risco
           </h2>
           <div className="space-y-2">
             {urgentLeads.length === 0 && warningLeads.length === 0 ? (
