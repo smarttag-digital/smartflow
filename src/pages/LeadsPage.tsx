@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CurrencyInput, { formatBRL } from "@/components/CurrencyInput";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, MessageSquare, Phone, Mail, ChevronRight, Plus, X, Clock, Tag, Trash2,
@@ -480,18 +481,18 @@ export default function LeadsPage() {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Valor Imóvel (VGV)</label>
-                      <input type="number" value={editData.deal_value || 0} onChange={(e) => setEditData({ ...editData, deal_value: Number(e.target.value) })} className={inputCls} />
+                      <CurrencyInput value={editData.deal_value || 0} onChange={(v) => setEditData({ ...editData, deal_value: v })} className={inputCls} />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Comissão (VGC)</label>
-                      <input type="number" value={editData.commission_value || 0} onChange={(e) => setEditData({ ...editData, commission_value: Number(e.target.value) })} className={inputCls} />
+                      <CurrencyInput value={editData.commission_value || 0} onChange={(v) => setEditData({ ...editData, commission_value: v })} className={inputCls} />
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Valor Aluguel</label>
-                      <input type="number" value={editData.rent_value || 0} onChange={(e) => setEditData({ ...editData, rent_value: Number(e.target.value) })} className={inputCls} />
+                      <CurrencyInput value={editData.rent_value || 0} onChange={(v) => setEditData({ ...editData, rent_value: v })} className={inputCls} />
                     </div>
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Duração Contrato</label>
