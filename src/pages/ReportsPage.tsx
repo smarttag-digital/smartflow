@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { BarChart3, TrendingUp, Users, Clock, DollarSign, Home } from "lucide-react";
 import { useLeads, SOURCE_LABELS } from "@/hooks/useLeads";
+import { formatBRL } from "@/components/CurrencyInput";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
@@ -36,7 +37,7 @@ export default function ReportsPage() {
     { name: "Locação", value: leads.filter((l) => l.business_type === "locacao").length },
   ];
 
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  const fmt = (v: number) => formatBRL(v);
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
