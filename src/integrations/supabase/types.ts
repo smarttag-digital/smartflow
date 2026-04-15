@@ -177,6 +177,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          company_name: string | null
           created_at: string
           full_name: string
           id: string
@@ -186,6 +187,7 @@ export type Database = {
           whatsapp_template: string | null
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
           full_name?: string
           id?: string
@@ -195,6 +197,7 @@ export type Database = {
           whatsapp_template?: string | null
         }
         Update: {
+          company_name?: string | null
           created_at?: string
           full_name?: string
           id?: string

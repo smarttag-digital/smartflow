@@ -15,6 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useLeads";
 import logo from "@/assets/smart_tag_logo.png";
 
 const NAV_ITEMS = [
@@ -32,6 +33,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
+  const companyName = profile?.company_name || "Smart Tag";
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -64,8 +67,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <img src={logo} alt="Smart Tag" className="w-9 h-9 rounded-lg object-cover" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-bold text-foreground truncate">Smart Tag</h1>
-              <p className="text-[10px] text-muted-foreground truncate">Social Growth CRM</p>
+              <h1 className="text-sm font-bold text-foreground truncate">{companyName}</h1>
+              <p className="text-[10px] text-muted-foreground truncate">CRM Imobiliário</p>
             </div>
           )}
           <button
