@@ -48,7 +48,7 @@ export default function SignupPage() {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success("Conta criada! Verifique seu email para confirmar.");
+      toast.success("Conta criada! Sua conta está em análise e será aprovada em breve.");
     }
   };
 
