@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, Kanban, BarChart3, Download, Zap, Settings,
-  Menu, X, ChevronLeft, LogOut, ShieldCheck,
+  Menu, X, ChevronLeft, LogOut, ShieldCheck, Home,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useLeads";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/leads", icon: Users, label: "Leads" },
   { to: "/pipeline", icon: Kanban, label: "Pipeline" },
+  { to: "/properties", icon: Home, label: "Imóveis" },
   { to: "/capture", icon: Download, label: "Entrada de Leads" },
   { to: "/reports", icon: BarChart3, label: "Relatórios" },
   { to: "/automation", icon: Zap, label: "Automação" },
