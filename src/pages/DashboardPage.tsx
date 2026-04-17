@@ -52,7 +52,7 @@ export default function DashboardPage() {
   const comissaoMedia = vendas.length > 0 ? totalVGC / vendas.length : 0;
   const conversionRate = totalLeads > 0 ? Math.round((closedLeads.length / totalLeads) * 100) : 0;
 
-  // Operational stages only (exclude fechamento and lead_perdido)
+  // Operational stages only (exclude cca, fechamento and lead_perdido — these don't need urgent action)
   const operationalStages = ["novo", "atendimento", "envio_imoveis", "visita", "proposta"];
   const operationalLeads = activeLeads.filter(l => operationalStages.includes(l.stage));
 
@@ -62,6 +62,10 @@ export default function DashboardPage() {
   const warningLeads = operationalLeads.filter(l => getAlertLevel(l) === "yellow");
   const hotLeadsList = operationalLeads.filter(l => l.score === "hot");
 
+  // CCA leads (highlighted: bank evaluation = almost closed)
+  const ccaLeads = activeLeads.filter(l => l.stage === "cca");
+  const ccaVGV = ccaLeads.reduce((s, l) => s + (l.deal_value || 0), 0);
+
   // Revenue funnel
   const funnelData = [
     { name: "Novo", value: activeLeads.filter(l => l.stage === "novo").length, vgv: activeLeads.filter(l => l.stage === "novo").reduce((s, l) => s + (l.deal_value || 0), 0) },
@@ -69,6 +73,7 @@ export default function DashboardPage() {
     { name: "Envio", value: activeLeads.filter(l => l.stage === "envio_imoveis").length, vgv: activeLeads.filter(l => l.stage === "envio_imoveis").reduce((s, l) => s + (l.deal_value || 0), 0) },
     { name: "Visita", value: activeLeads.filter(l => l.stage === "visita").length, vgv: activeLeads.filter(l => l.stage === "visita").reduce((s, l) => s + (l.deal_value || 0), 0) },
     { name: "Proposta", value: activeLeads.filter(l => l.stage === "proposta").length, vgv: activeLeads.filter(l => l.stage === "proposta").reduce((s, l) => s + (l.deal_value || 0), 0) },
+    { name: "CCA", value: ccaLeads.length, vgv: ccaVGV },
     { name: "Fechamento", value: closedLeads.length, vgv: totalVGV },
   ];
 

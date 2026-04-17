@@ -7,7 +7,7 @@ import {
   getAlertLevel, openWhatsApp,
 } from "@/hooks/useLeads";
 
-const STAGES = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "fechamento", "lead_perdido"];
+const STAGES = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "cca", "fechamento", "lead_perdido"];
 
 export default function PipelinePage() {
   const { leads, loading, updateLead } = useLeads();
@@ -62,6 +62,7 @@ export default function PipelinePage() {
               });
 
             const isLost = stage === "lead_perdido";
+            const isCCA = stage === "cca";
 
             return (
               <Droppable key={stage} droppableId={stage}>
@@ -70,11 +71,12 @@ export default function PipelinePage() {
                     className={`flex-shrink-0 w-[240px] flex flex-col rounded-xl border transition-colors ${
                       snapshot.isDraggingOver ? "border-primary/40 bg-primary/5"
                       : isLost ? "border-destructive/20 bg-destructive/5"
+                      : isCCA ? "border-amber-500/40 bg-amber-500/5 ring-1 ring-amber-500/20"
                       : "border-border/30 bg-muted/10"
                     }`}>
                     <div className="p-3 border-b border-border/20 flex items-center justify-between">
-                      <h3 className={`text-xs font-semibold ${isLost ? "text-destructive" : "text-foreground"}`}>
-                        {STAGE_LABELS[stage] || stage}
+                      <h3 className={`text-xs font-semibold ${isLost ? "text-destructive" : isCCA ? "text-amber-400" : "text-foreground"}`}>
+                        {isCCA ? "🏦 CCA - Avaliação" : (STAGE_LABELS[stage] || stage)}
                       </h3>
                       <span className="text-[10px] bg-muted/50 text-muted-foreground px-2 py-0.5 rounded-full">{stageLeads.length}</span>
                     </div>
@@ -88,6 +90,7 @@ export default function PipelinePage() {
                                 className={`p-3 rounded-lg border transition-all ${
                                   snapshot.isDragging ? "shadow-xl border-primary/40 bg-card"
                                   : isLost ? "border-destructive/20 bg-card/40 opacity-70"
+                                  : isCCA ? "border-amber-500/40 bg-amber-500/5"
                                   : alert === "red" ? "alert-red bg-card/60"
                                   : alert === "yellow" ? "alert-yellow bg-card/60"
                                   : "border-border/30 bg-card/60 hover:border-border/50"
