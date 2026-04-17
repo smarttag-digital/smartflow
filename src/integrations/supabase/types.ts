@@ -53,6 +53,63 @@ export type Database = {
         }
         Relationships: []
       }
+      commissions: {
+        Row: {
+          business_type: string
+          commission_percent: number | null
+          commission_value: number
+          created_at: string
+          deal_value: number
+          expected_date: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          partner_id: string | null
+          partner_percent: number | null
+          partner_value: number | null
+          received_date: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_type?: string
+          commission_percent?: number | null
+          commission_value?: number
+          created_at?: string
+          deal_value?: number
+          expected_date?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          partner_id?: string | null
+          partner_percent?: number | null
+          partner_value?: number | null
+          received_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_type?: string
+          commission_percent?: number | null
+          commission_value?: number
+          created_at?: string
+          deal_value?: number
+          expected_date?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          partner_id?: string | null
+          partner_percent?: number | null
+          partner_value?: number | null
+          received_date?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           created_at: string
@@ -202,10 +259,56 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          partner_type: string
+          phone: string | null
+          region: string | null
+          specialty: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          partner_type?: string
+          phone?: string | null
+          region?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          partner_type?: string
+          phone?: string | null
+          region?: string | null
+          specialty?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_name: string | null
           created_at: string
+          default_commission_percent: number | null
           full_name: string
           id: string
           phone: string | null
@@ -216,6 +319,7 @@ export type Database = {
         Insert: {
           company_name?: string | null
           created_at?: string
+          default_commission_percent?: number | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -226,6 +330,7 @@ export type Database = {
         Update: {
           company_name?: string | null
           created_at?: string
+          default_commission_percent?: number | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -377,6 +482,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_overdue_commissions: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "user"

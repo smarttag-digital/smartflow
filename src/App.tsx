@@ -10,6 +10,8 @@ import DashboardPage from "@/pages/DashboardPage";
 import LeadsPage from "@/pages/LeadsPage";
 import PipelinePage from "@/pages/PipelinePage";
 import PropertiesPage from "@/pages/PropertiesPage";
+import PartnersPage from "@/pages/PartnersPage";
+import FinancePage from "@/pages/FinancePage";
 import CapturePage from "@/pages/CapturePage";
 import ReportsPage from "@/pages/ReportsPage";
 import AutomationPage from "@/pages/AutomationPage";
@@ -45,6 +47,8 @@ const App = () => (
             <Route path="/leads" element={<ProtectedLayout><LeadsPage /></ProtectedLayout>} />
             <Route path="/pipeline" element={<ProtectedLayout><PipelinePage /></ProtectedLayout>} />
             <Route path="/properties" element={<ProtectedLayout><PropertiesPage /></ProtectedLayout>} />
+            <Route path="/partners" element={<ProtectedLayout><PartnersPage /></ProtectedLayout>} />
+            <Route path="/finance" element={<ProtectedLayout><FinancePage /></ProtectedLayout>} />
             <Route path="/capture" element={<ProtectedLayout><CapturePage /></ProtectedLayout>} />
             <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
             <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
