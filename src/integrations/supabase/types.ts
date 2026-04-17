@@ -91,6 +91,33 @@ export type Database = {
           },
         ]
       }
+      lead_properties: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          notes: string | null
+          property_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          notes?: string | null
+          property_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          property_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       leads: {
         Row: {
           assigned_to: string | null
@@ -205,6 +232,84 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp_template?: string | null
+        }
+        Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string | null
+          area_m2: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          business_type: string
+          city: string | null
+          created_at: string
+          deal_value: number | null
+          description: string | null
+          id: string
+          image_url: string | null
+          neighborhood: string | null
+          owner_email: string | null
+          owner_name: string | null
+          owner_notes: string | null
+          owner_phone: string | null
+          parking_spots: number | null
+          property_type: string
+          rent_value: number | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          area_m2?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          business_type?: string
+          city?: string | null
+          created_at?: string
+          deal_value?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          neighborhood?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_notes?: string | null
+          owner_phone?: string | null
+          parking_spots?: number | null
+          property_type?: string
+          rent_value?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          area_m2?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          business_type?: string
+          city?: string | null
+          created_at?: string
+          deal_value?: number | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          neighborhood?: string | null
+          owner_email?: string | null
+          owner_name?: string | null
+          owner_notes?: string | null
+          owner_phone?: string | null
+          parking_spots?: number | null
+          property_type?: string
+          rent_value?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
