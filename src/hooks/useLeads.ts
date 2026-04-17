@@ -66,6 +66,7 @@ export const STAGE_OPTIONS = [
   { value: "envio_imoveis", label: "Envio de Imóveis" },
   { value: "visita", label: "Visita" },
   { value: "proposta", label: "Proposta" },
+  { value: "cca", label: "CCA - Avaliação Bancária" },
   { value: "fechamento", label: "Fechamento" },
   { value: "lead_perdido", label: "Lead Perdido" },
 ];
@@ -99,7 +100,7 @@ export const SCORE_CONFIG: Record<string, { label: string; emoji: string }> = {
 };
 
 export function getAlertLevel(lead: Lead): "red" | "yellow" | "none" {
-  if (lead.stage === "lead_perdido" || lead.stage === "fechamento") return "none";
+  if (lead.stage === "lead_perdido" || lead.stage === "fechamento" || lead.stage === "cca") return "none";
   const hoursAgo = (dateStr: string | null) => {
     if (!dateStr) return null;
     return Math.round((Date.now() - new Date(dateStr).getTime()) / 3600000);
