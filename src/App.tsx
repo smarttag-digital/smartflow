@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { PrivacyProvider } from "@/contexts/PrivacyContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
@@ -39,23 +40,25 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
-            <Route path="/leads" element={<ProtectedLayout><LeadsPage /></ProtectedLayout>} />
-            <Route path="/pipeline" element={<ProtectedLayout><PipelinePage /></ProtectedLayout>} />
-            <Route path="/properties" element={<ProtectedLayout><PropertiesPage /></ProtectedLayout>} />
-            <Route path="/partners" element={<ProtectedLayout><PartnersPage /></ProtectedLayout>} />
-            <Route path="/finance" element={<ProtectedLayout><FinancePage /></ProtectedLayout>} />
-            <Route path="/capture" element={<ProtectedLayout><CapturePage /></ProtectedLayout>} />
-            <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
-            <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
-            <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
-            <Route path="/admin" element={<ProtectedLayout><AdminPage /></ProtectedLayout>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PrivacyProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
+              <Route path="/leads" element={<ProtectedLayout><LeadsPage /></ProtectedLayout>} />
+              <Route path="/pipeline" element={<ProtectedLayout><PipelinePage /></ProtectedLayout>} />
+              <Route path="/properties" element={<ProtectedLayout><PropertiesPage /></ProtectedLayout>} />
+              <Route path="/partners" element={<ProtectedLayout><PartnersPage /></ProtectedLayout>} />
+              <Route path="/finance" element={<ProtectedLayout><FinancePage /></ProtectedLayout>} />
+              <Route path="/capture" element={<ProtectedLayout><CapturePage /></ProtectedLayout>} />
+              <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
+              <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
+              <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
+              <Route path="/admin" element={<ProtectedLayout><AdminPage /></ProtectedLayout>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PrivacyProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
