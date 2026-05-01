@@ -7,6 +7,7 @@ import { usePartners } from "@/hooks/usePartners";
 import { useLeads } from "@/hooks/useLeads";
 import { useProfile } from "@/hooks/useLeads";
 import CurrencyInput, { formatBRL } from "@/components/CurrencyInput";
+import PrivateValue from "@/components/PrivateValue";
 
 const EMPTY: Partial<Commission> = {
   lead_id: "", deal_value: 0, commission_percent: 6, commission_value: 0,
@@ -78,10 +79,10 @@ export default function FinancePage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPI label="Recebido (mês)" value={formatBRL(summary.receivedThisMonth)} icon={<DollarSign className="w-4 h-4" />} color="text-emerald-400 bg-emerald-500/10" />
-        <KPI label="Previsto (mês)" value={formatBRL(summary.expectedThisMonth)} icon={<Calendar className="w-4 h-4" />} color="text-blue-400 bg-blue-500/10" />
-        <KPI label="Total pendente" value={formatBRL(summary.totalPending)} icon={<TrendingUp className="w-4 h-4" />} color="text-amber-400 bg-amber-500/10" />
-        <KPI label="Em atraso" value={formatBRL(summary.totalOverdue)} icon={<AlertCircle className="w-4 h-4" />} color="text-destructive bg-destructive/10" />
+        <KPI revealKey="fin-received" label="Recebido (mês)" value={formatBRL(summary.receivedThisMonth)} icon={<DollarSign className="w-4 h-4" />} color="text-emerald-400 bg-emerald-500/10" />
+        <KPI revealKey="fin-expected" label="Previsto (mês)" value={formatBRL(summary.expectedThisMonth)} icon={<Calendar className="w-4 h-4" />} color="text-blue-400 bg-blue-500/10" />
+        <KPI revealKey="fin-pending" label="Total pendente" value={formatBRL(summary.totalPending)} icon={<TrendingUp className="w-4 h-4" />} color="text-amber-400 bg-amber-500/10" />
+        <KPI revealKey="fin-overdue" label="Em atraso" value={formatBRL(summary.totalOverdue)} icon={<AlertCircle className="w-4 h-4" />} color="text-destructive bg-destructive/10" />
       </div>
 
       {/* Cashflow chart */}
@@ -145,12 +146,12 @@ export default function FinancePage() {
                         <span className="text-[10px] text-muted-foreground">{c.business_type === "locacao" ? "Locação" : "Venda"}</span>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-muted-foreground">
-                        <span>VGV: <strong className="text-foreground">{formatBRL(c.deal_value)}</strong></span>
-                        <span>Comissão: <strong className="text-primary">{formatBRL(c.commission_value)}</strong> ({c.commission_percent}%)</span>
+                        <span>VGV: <strong className="text-foreground"><PrivateValue value={formatBRL(c.deal_value)} revealKey={`fin-row-vgv-${c.id}`} /></strong></span>
+                        <span>Comissão: <strong className="text-primary"><PrivateValue value={formatBRL(c.commission_value)} revealKey={`fin-row-vgc-${c.id}`} /></strong> ({c.commission_percent}%)</span>
                         {c.partner_id && (
-                          <span>Parceiro: <strong className="text-foreground">{partnerName(c.partner_id)}</strong> ({formatBRL(c.partner_value)})</span>
+                          <span>Parceiro: <strong className="text-foreground">{partnerName(c.partner_id)}</strong> (<PrivateValue value={formatBRL(c.partner_value)} revealKey={`fin-row-pv-${c.id}`} />)</span>
                         )}
-                        <span className="text-emerald-400">Líquido: <strong>{formatBRL(net)}</strong></span>
+                        <span className="text-emerald-400">Líquido: <strong><PrivateValue value={formatBRL(net)} revealKey={`fin-row-net-${c.id}`} /></strong></span>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-muted-foreground">
                         {c.expected_date && <span>📅 Previsto: {new Date(c.expected_date).toLocaleDateString("pt-BR")}</span>}
@@ -294,14 +295,16 @@ export default function FinancePage() {
   );
 }
 
-function KPI({ label, value, icon, color }: { label: string; value: string; icon: React.ReactNode; color: string }) {
+function KPI({ label, value, icon, color, revealKey }: { label: string; value: string; icon: React.ReactNode; color: string; revealKey?: string }) {
   return (
     <div className="rounded-xl border border-border/40 bg-card p-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-[11px] text-muted-foreground uppercase tracking-wide">{label}</p>
         <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>{icon}</div>
       </div>
-      <p className="text-lg font-bold text-foreground truncate">{value}</p>
+      <p className="text-lg font-bold text-foreground truncate">
+        <PrivateValue value={value} revealKey={revealKey} />
+      </p>
     </div>
   );
 }

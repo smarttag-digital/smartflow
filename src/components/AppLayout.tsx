@@ -4,11 +4,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, Kanban, BarChart3, Download, Zap, Settings,
   Menu, X, ChevronLeft, LogOut, ShieldCheck, Home, DollarSign, Handshake,
+  Eye, EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useLeads";
 import { useIsAdmin } from "@/hooks/useAccessControl";
-import logo from "@/assets/smart_tag_logo.png";
+import { usePrivacy } from "@/contexts/PrivacyContext";
+import BottomNav from "@/components/BottomNav";
+import logo from "@/assets/smartflow_logo.png";
 
 const NAV_ITEMS = [
   { to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -30,7 +33,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
-  const companyName = profile?.company_name || "Smart Tag";
+  const { presentationMode, togglePresentationMode } = usePrivacy();
+  const companyName = profile?.company_name || "Smarflow CRM";
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -56,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
         style={{ background: "linear-gradient(180deg, hsl(230 22% 9%), hsl(260 25% 10%))" }}>
         <div className={`flex items-center gap-3 p-4 border-b border-border/30 ${collapsed ? "justify-center" : ""}`}>
-          <img src={logo} alt="Smart Tag" className="w-9 h-9 rounded-lg object-cover" />
+          <img src={logo} alt="Smarflow" className="w-9 h-9 rounded-lg object-contain bg-white/5 p-1" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold text-foreground truncate">{companyName}</h1>
@@ -98,11 +102,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 flex items-center gap-4 px-4 lg:px-6 border-b border-border/30 bg-background/50 backdrop-blur-md flex-shrink-0">
+        <header className="h-14 flex items-center gap-3 px-4 lg:px-6 border-b border-border/30 bg-background/50 backdrop-blur-md flex-shrink-0">
           <button onClick={() => setMobileOpen(true)} className="lg:hidden text-muted-foreground">
             <Menu className="w-5 h-5" />
           </button>
+          <div className="flex items-center gap-2 lg:hidden">
+            <img src={logo} alt="Smarflow" className="w-7 h-7 object-contain" />
+            <span className="text-sm font-bold text-foreground">Smarflow</span>
+          </div>
           <div className="flex-1" />
+
+          <button
+            onClick={togglePresentationMode}
+            title={presentationMode ? "Mostrar valores financeiros" : "Modo apresentação (ocultar valores)"}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+              presentationMode
+                ? "bg-primary/15 text-primary border-primary/30"
+                : "border-border/50 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {presentationMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{presentationMode ? "Privado" : "Mostrar"}</span>
+          </button>
+
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[200px]">
               {user?.user_metadata?.full_name || user?.email}
@@ -112,8 +134,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</div>
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">{children}</div>
       </main>
+
+      <BottomNav />
     </div>
   );
 }

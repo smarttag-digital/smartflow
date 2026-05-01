@@ -5,7 +5,7 @@ import { Mail, Lock, Eye, EyeOff, User, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/smart_tag_logo.png";
+import logo from "@/assets/smartflow_logo.png";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -78,9 +78,9 @@ export default function SignupPage() {
         className="w-full max-w-md"
       >
         <div className="flex flex-col items-center mb-8">
-          <img src={logo} alt="Smart Tag" className="w-16 h-16 rounded-2xl object-cover mb-4" />
+          <img src={logo} alt="Smarflow" className="w-20 h-20 object-contain mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Criar Conta</h1>
-          <p className="text-sm text-muted-foreground mt-1">Comece a converter mais leads hoje</p>
+          <p className="text-sm text-muted-foreground mt-1">Smarflow CRM — comece a converter mais leads hoje</p>
         </div>
 
         <div className="glass-card p-6 space-y-4">

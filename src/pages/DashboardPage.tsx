@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useLeads, getAlertLevel, openWhatsApp, SCORE_CONFIG, SOURCE_LABELS, NEXT_ACTION_OPTIONS, isActionOverdue, isActionToday, STAGE_LABELS } from "@/hooks/useLeads";
 import { formatBRL } from "@/components/CurrencyInput";
+import PrivateValue from "@/components/PrivateValue";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Legend, Funnel, FunnelChart } from "recharts";
 import { useNavigate } from "react-router-dom";
 
@@ -161,12 +162,12 @@ export default function DashboardPage() {
       {/* Financial Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: "VGV Total", value: formatBRL(totalVGV), icon: DollarSign, color: "text-success" },
-          { label: "VGC Total", value: formatBRL(totalVGC), icon: Target, color: "text-primary" },
-          { label: "Ticket Médio", value: formatBRL(ticketMedio), icon: BarChart3, color: "text-foreground" },
-          { label: "Conversão", value: `${conversionRate}%`, icon: TrendingUp, color: conversionRate > 15 ? "text-success" : "text-warning" },
-          { label: "Total Leads", value: totalLeads, icon: Users, color: "text-foreground" },
-          { label: "Leads Quentes", value: hotLeads, icon: Flame, color: "text-hot" },
+          { key: "vgv", label: "VGV Total", value: formatBRL(totalVGV), icon: DollarSign, color: "text-success", financial: true },
+          { key: "vgc", label: "VGC Total", value: formatBRL(totalVGC), icon: Target, color: "text-primary", financial: true },
+          { key: "ticket", label: "Ticket Médio", value: formatBRL(ticketMedio), icon: BarChart3, color: "text-foreground", financial: true },
+          { key: "conv", label: "Conversão", value: `${conversionRate}%`, icon: TrendingUp, color: conversionRate > 15 ? "text-success" : "text-warning", financial: false },
+          { key: "leads", label: "Total Leads", value: String(totalLeads), icon: Users, color: "text-foreground", financial: false },
+          { key: "hot", label: "Leads Quentes", value: String(hotLeads), icon: Flame, color: "text-hot", financial: false },
         ].map((s, i) => (
           <motion.div key={s.label} {...fadeUp} transition={{ delay: i * 0.05 }}
             className="glass-card p-4">
@@ -174,7 +175,9 @@ export default function DashboardPage() {
               <s.icon className={`w-4 h-4 ${s.color}`} />
               <span className="text-[11px] text-muted-foreground font-medium truncate">{s.label}</span>
             </div>
-            <p className={`text-xl font-bold ${s.color} truncate`}>{s.value}</p>
+            <p className={`text-xl font-bold ${s.color} truncate`}>
+              {s.financial ? <PrivateValue value={s.value} revealKey={`dash-${s.key}`} /> : s.value}
+            </p>
           </motion.div>
         ))}
       </div>
