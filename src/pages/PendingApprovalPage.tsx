@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Clock, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import logo from "@/assets/smart_tag_logo.png";
+import logo from "@/assets/smartflow_logo.png";
 
 export default function PendingApprovalPage() {
   const { signOut, user } = useAuth();
