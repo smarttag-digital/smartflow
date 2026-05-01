@@ -146,12 +146,12 @@ export default function FinancePage() {
                         <span className="text-[10px] text-muted-foreground">{c.business_type === "locacao" ? "Locação" : "Venda"}</span>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-muted-foreground">
-                        <span>VGV: <strong className="text-foreground">{formatBRL(c.deal_value)}</strong></span>
-                        <span>Comissão: <strong className="text-primary">{formatBRL(c.commission_value)}</strong> ({c.commission_percent}%)</span>
+                        <span>VGV: <strong className="text-foreground"><PrivateValue value={formatBRL(c.deal_value)} revealKey={`fin-row-vgv-${c.id}`} /></strong></span>
+                        <span>Comissão: <strong className="text-primary"><PrivateValue value={formatBRL(c.commission_value)} revealKey={`fin-row-vgc-${c.id}`} /></strong> ({c.commission_percent}%)</span>
                         {c.partner_id && (
-                          <span>Parceiro: <strong className="text-foreground">{partnerName(c.partner_id)}</strong> ({formatBRL(c.partner_value)})</span>
+                          <span>Parceiro: <strong className="text-foreground">{partnerName(c.partner_id)}</strong> (<PrivateValue value={formatBRL(c.partner_value)} revealKey={`fin-row-pv-${c.id}`} />)</span>
                         )}
-                        <span className="text-emerald-400">Líquido: <strong>{formatBRL(net)}</strong></span>
+                        <span className="text-emerald-400">Líquido: <strong><PrivateValue value={formatBRL(net)} revealKey={`fin-row-net-${c.id}`} /></strong></span>
                       </div>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-muted-foreground">
                         {c.expected_date && <span>📅 Previsto: {new Date(c.expected_date).toLocaleDateString("pt-BR")}</span>}
