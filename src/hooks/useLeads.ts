@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -56,9 +57,7 @@ export const SOURCE_OPTIONS = [
   { value: "outros", label: "Outros" },
 ];
 
-export const SOURCE_LABELS: Record<string, string> = Object.fromEntries(
-  SOURCE_OPTIONS.map((s) => [s.value, s.label])
-);
+export const SOURCE_LABELS: Record<string, string> = Object.fromEntries(SOURCE_OPTIONS.map((s) => [s.value, s.label]));
 
 export const STAGE_OPTIONS = [
   { value: "novo", label: "Novo Lead" },
@@ -71,9 +70,7 @@ export const STAGE_OPTIONS = [
   { value: "lead_perdido", label: "Lead Perdido" },
 ];
 
-export const STAGE_LABELS: Record<string, string> = Object.fromEntries(
-  STAGE_OPTIONS.map((s) => [s.value, s.label])
-);
+export const STAGE_LABELS: Record<string, string> = Object.fromEntries(STAGE_OPTIONS.map((s) => [s.value, s.label]));
 
 export const NEXT_ACTION_OPTIONS = [
   { value: "", label: "Nenhuma" },
@@ -105,7 +102,6 @@ export function getAlertLevel(lead: Lead): "red" | "yellow" | "none" {
     if (!dateStr) return null;
     return Math.round((Date.now() - new Date(dateStr).getTime()) / 3600000);
   };
-
   if (!lead.last_response && !lead.last_contact) {
     const h = hoursAgo(lead.created_at);
     if (h !== null && h >= 48) return "red";
@@ -138,104 +134,147 @@ export function openWhatsApp(phone: string, message?: string) {
   window.open(url, "_blank");
 }
 
+const LEADS_KEY = ["leads"] as const;
+
 export function useLeads() {
   const { user } = useAuth();
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
-  const fetchLeads = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("created_at", { ascending: false });
+  const query = useQuery({
+    queryKey: LEADS_KEY,
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as Lead[]) || [];
+    },
+  });
 
-    if (error) {
-      console.error("Error fetching leads:", error);
-      toast.error("Erro ao carregar leads");
-    } else {
-      setLeads((data as Lead[]) || []);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
-
+  // Realtime → invalidate cache (revalida automaticamente)
   useEffect(() => {
     if (!user) return;
     const channel = supabase
       .channel("leads-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => {
-        fetchLeads();
+        qc.invalidateQueries({ queryKey: LEADS_KEY });
       })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
-  }, [user, fetchLeads]);
+  }, [user, qc]);
 
-  const createLead = async (lead: Partial<Lead>) => {
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from("leads")
-      .insert({ ...lead, user_id: user.id } as any)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Error creating lead:", error);
+  const createMut = useMutation({
+    mutationFn: async (lead: Partial<Lead>) => {
+      if (!user) throw new Error("Não autenticado");
+      const { data, error } = await supabase
+        .from("leads")
+        .insert({ ...lead, user_id: user.id } as any)
+        .select()
+        .single();
+      if (error) throw error;
+      return data as Lead;
+    },
+    onMutate: async (newLead) => {
+      await qc.cancelQueries({ queryKey: LEADS_KEY });
+      const previous = qc.getQueryData<Lead[]>(LEADS_KEY) || [];
+      const optimistic: Lead = {
+        id: `tmp-${crypto.randomUUID()}`,
+        user_id: user?.id || "",
+        name: "", phone: "", email: "", interest: "", source: "manual",
+        score: "cold", stage: "novo", tags: [], notes: "", assigned_to: "",
+        business_type: "venda", deal_value: 0, commission_percent: 0, commission_value: 0,
+        rent_value: 0, contract_duration: "", last_contact: null, last_response: null,
+        next_action: "", next_action_date: null, lost_reason: "",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...(newLead as any),
+      };
+      qc.setQueryData<Lead[]>(LEADS_KEY, [optimistic, ...previous]);
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(LEADS_KEY, ctx.previous);
       toast.error("Erro ao criar lead");
-      return null;
-    }
-    toast.success("Lead criado com sucesso!");
-    return data as Lead;
-  };
+    },
+    onSuccess: () => { toast.success("Lead criado com sucesso!"); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: LEADS_KEY }); },
+  });
 
-  const updateLead = async (id: string, updates: Partial<Lead>) => {
-    const { error } = await supabase
-      .from("leads")
-      .update(updates as any)
-      .eq("id", id);
-
-    if (error) {
-      console.error("Error updating lead:", error);
+  const updateMut = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Lead> }) => {
+      const { error } = await supabase.from("leads").update(updates as any).eq("id", id);
+      if (error) throw error;
+      return { id, updates };
+    },
+    onMutate: async ({ id, updates }) => {
+      await qc.cancelQueries({ queryKey: LEADS_KEY });
+      const previous = qc.getQueryData<Lead[]>(LEADS_KEY) || [];
+      qc.setQueryData<Lead[]>(LEADS_KEY, previous.map(l => l.id === id ? { ...l, ...updates } : l));
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(LEADS_KEY, ctx.previous);
       toast.error("Erro ao atualizar lead");
-      return false;
-    }
-    return true;
-  };
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: LEADS_KEY }); },
+  });
 
-  const deleteLead = async (id: string) => {
-    const { error } = await supabase.from("leads").delete().eq("id", id);
-    if (error) {
-      console.error("Error deleting lead:", error);
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("leads").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: LEADS_KEY });
+      const previous = qc.getQueryData<Lead[]>(LEADS_KEY) || [];
+      qc.setQueryData<Lead[]>(LEADS_KEY, previous.filter(l => l.id !== id));
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(LEADS_KEY, ctx.previous);
       toast.error("Erro ao excluir lead");
-      return false;
-    }
-    toast.success("Lead excluído!");
-    return true;
-  };
+    },
+    onSuccess: () => { toast.success("Lead excluído!"); },
+    onSettled: () => { qc.invalidateQueries({ queryKey: LEADS_KEY }); },
+  });
 
-  return { leads, loading, fetchLeads, createLead, updateLead, deleteLead };
+  return {
+    leads: query.data || [],
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    error: query.error,
+    fetchLeads: () => qc.invalidateQueries({ queryKey: LEADS_KEY }),
+    createLead: async (lead: Partial<Lead>): Promise<Lead | null> => {
+      try { return await createMut.mutateAsync(lead); } catch { return null; }
+    },
+    updateLead: async (id: string, updates: Partial<Lead>): Promise<boolean> => {
+      try { await updateMut.mutateAsync({ id, updates }); return true; } catch { return false; }
+    },
+    deleteLead: async (id: string): Promise<boolean> => {
+      try { await deleteMut.mutateAsync(id); return true; } catch { return false; }
+    },
+  };
 }
 
 export function useInteractions(leadId: string | null) {
   const { user } = useAuth();
-  const [interactions, setInteractions] = useState<Interaction[]>([]);
+  const qc = useQueryClient();
 
-  const fetchInteractions = useCallback(async () => {
-    if (!user || !leadId) { setInteractions([]); return; }
-    const { data } = await supabase
-      .from("interactions")
-      .select("*")
-      .eq("lead_id", leadId)
-      .order("created_at", { ascending: true });
-    setInteractions((data as Interaction[]) || []);
-  }, [user, leadId]);
-
-  useEffect(() => { fetchInteractions(); }, [fetchInteractions]);
+  const query = useQuery({
+    queryKey: ["interactions", leadId],
+    enabled: !!user && !!leadId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("interactions")
+        .select("*")
+        .eq("lead_id", leadId!)
+        .order("created_at", { ascending: true });
+      return (data as Interaction[]) || [];
+    },
+  });
 
   const addInteraction = async (interaction: Partial<Interaction>) => {
     if (!user || !leadId) return;
@@ -244,42 +283,37 @@ export function useInteractions(leadId: string | null) {
       lead_id: leadId,
       user_id: user.id,
     } as any);
-    fetchInteractions();
+    qc.invalidateQueries({ queryKey: ["interactions", leadId] });
   };
 
-  return { interactions, addInteraction, fetchInteractions };
+  return {
+    interactions: query.data || [],
+    addInteraction,
+    fetchInteractions: () => qc.invalidateQueries({ queryKey: ["interactions", leadId] }),
+  };
 }
 
 export function useProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<any>(null);
+  const qc = useQueryClient();
 
-  const fetchProfile = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-    setProfile(data);
-  }, [user]);
-
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  const query = useQuery({
+    queryKey: ["profile", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", user!.id).single();
+      return data;
+    },
+  });
 
   const updateProfile = async (updates: any) => {
-    if (!user) return;
-    const { error } = await supabase
-      .from("profiles")
-      .update(updates)
-      .eq("user_id", user.id);
-    if (error) {
-      toast.error("Erro ao atualizar perfil");
-      return false;
-    }
+    if (!user) return false;
+    const { error } = await supabase.from("profiles").update(updates).eq("user_id", user.id);
+    if (error) { toast.error("Erro ao atualizar perfil"); return false; }
     toast.success("Perfil atualizado!");
-    fetchProfile();
+    qc.invalidateQueries({ queryKey: ["profile", user.id] });
     return true;
   };
 
-  return { profile, updateProfile, fetchProfile };
+  return { profile: query.data, updateProfile, fetchProfile: () => qc.invalidateQueries({ queryKey: ["profile", user?.id] }) };
 }

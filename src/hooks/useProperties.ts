@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -44,10 +45,7 @@ export const PROPERTY_TYPE_OPTIONS = [
   { value: "comercial", label: "Comercial" },
   { value: "terreno", label: "Terreno" },
 ];
-
-export const PROPERTY_TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  PROPERTY_TYPE_OPTIONS.map((p) => [p.value, p.label])
-);
+export const PROPERTY_TYPE_LABELS: Record<string, string> = Object.fromEntries(PROPERTY_TYPE_OPTIONS.map((p) => [p.value, p.label]));
 
 export const PROPERTY_STATUS_OPTIONS = [
   { value: "disponivel", label: "Disponível", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30" },
@@ -55,113 +53,147 @@ export const PROPERTY_STATUS_OPTIONS = [
   { value: "vendido", label: "Vendido", color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
   { value: "alugado", label: "Alugado", color: "text-purple-400 bg-purple-500/10 border-purple-500/30" },
 ];
+export const PROPERTY_STATUS_LABELS: Record<string, string> = Object.fromEntries(PROPERTY_STATUS_OPTIONS.map((p) => [p.value, p.label]));
 
-export const PROPERTY_STATUS_LABELS: Record<string, string> = Object.fromEntries(
-  PROPERTY_STATUS_OPTIONS.map((p) => [p.value, p.label])
-);
+const PROPERTIES_KEY = ["properties"] as const;
 
 export function useProperties() {
   const { user } = useAuth();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
-  const fetchProperties = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("properties")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
-      console.error(error);
-      toast.error("Erro ao carregar imóveis");
-    } else {
-      setProperties((data as Property[]) || []);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => { fetchProperties(); }, [fetchProperties]);
+  const query = useQuery({
+    queryKey: PROPERTIES_KEY,
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("properties")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as Property[]) || [];
+    },
+  });
 
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
+    const ch = supabase
       .channel("properties-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "properties" }, () => {
-        fetchProperties();
+        qc.invalidateQueries({ queryKey: PROPERTIES_KEY });
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [user, fetchProperties]);
+    return () => { supabase.removeChannel(ch); };
+  }, [user, qc]);
 
-  const createProperty = async (property: Partial<Property>) => {
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from("properties")
-      .insert({ ...property, user_id: user.id } as any)
-      .select()
-      .single();
-    if (error) {
-      console.error(error);
+  const createMut = useMutation({
+    mutationFn: async (p: Partial<Property>) => {
+      if (!user) throw new Error("Não autenticado");
+      const { data, error } = await supabase.from("properties").insert({ ...p, user_id: user.id } as any).select().single();
+      if (error) throw error;
+      return data as Property;
+    },
+    onMutate: async (p) => {
+      await qc.cancelQueries({ queryKey: PROPERTIES_KEY });
+      const previous = qc.getQueryData<Property[]>(PROPERTIES_KEY) || [];
+      const optimistic = {
+        id: `tmp-${crypto.randomUUID()}`,
+        user_id: user?.id || "",
+        title: "", property_type: "apartamento", business_type: "venda", status: "disponivel",
+        deal_value: 0, rent_value: 0, city: "", neighborhood: "", address: "",
+        bedrooms: 0, bathrooms: 0, parking_spots: 0, area_m2: 0,
+        description: "", image_url: "", owner_name: "", owner_phone: "", owner_email: "", owner_notes: "",
+        created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+        ...(p as any),
+      } as Property;
+      qc.setQueryData<Property[]>(PROPERTIES_KEY, [optimistic, ...previous]);
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(PROPERTIES_KEY, ctx.previous);
       toast.error("Erro ao cadastrar imóvel");
-      return null;
-    }
-    toast.success("Imóvel cadastrado!");
-    return data as Property;
-  };
+    },
+    onSuccess: () => toast.success("Imóvel cadastrado!"),
+    onSettled: () => qc.invalidateQueries({ queryKey: PROPERTIES_KEY }),
+  });
 
-  const updateProperty = async (id: string, updates: Partial<Property>) => {
-    const { error } = await supabase.from("properties").update(updates as any).eq("id", id);
-    if (error) {
+  const updateMut = useMutation({
+    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Property> }) => {
+      const { error } = await supabase.from("properties").update(updates as any).eq("id", id);
+      if (error) throw error;
+      return { id, updates };
+    },
+    onMutate: async ({ id, updates }) => {
+      await qc.cancelQueries({ queryKey: PROPERTIES_KEY });
+      const previous = qc.getQueryData<Property[]>(PROPERTIES_KEY) || [];
+      qc.setQueryData<Property[]>(PROPERTIES_KEY, previous.map(p => p.id === id ? { ...p, ...updates } : p));
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(PROPERTIES_KEY, ctx.previous);
       toast.error("Erro ao atualizar imóvel");
-      return false;
-    }
-    toast.success("Imóvel atualizado!");
-    return true;
-  };
+    },
+    onSuccess: () => toast.success("Imóvel atualizado!"),
+    onSettled: () => qc.invalidateQueries({ queryKey: PROPERTIES_KEY }),
+  });
 
-  const deleteProperty = async (id: string) => {
-    const { error } = await supabase.from("properties").delete().eq("id", id);
-    if (error) {
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("properties").delete().eq("id", id);
+      if (error) throw error;
+      return id;
+    },
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: PROPERTIES_KEY });
+      const previous = qc.getQueryData<Property[]>(PROPERTIES_KEY) || [];
+      qc.setQueryData<Property[]>(PROPERTIES_KEY, previous.filter(p => p.id !== id));
+      return { previous };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) qc.setQueryData(PROPERTIES_KEY, ctx.previous);
       toast.error("Erro ao excluir imóvel");
-      return false;
-    }
-    toast.success("Imóvel excluído!");
-    return true;
-  };
+    },
+    onSuccess: () => toast.success("Imóvel excluído!"),
+    onSettled: () => qc.invalidateQueries({ queryKey: PROPERTIES_KEY }),
+  });
 
   const uploadImage = async (file: File): Promise<string | null> => {
     if (!user) return null;
     const ext = file.name.split(".").pop();
     const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
     const { error } = await supabase.storage.from("property-images").upload(path, file, { upsert: false });
-    if (error) {
-      console.error(error);
-      toast.error("Erro ao enviar imagem");
-      return null;
-    }
+    if (error) { toast.error("Erro ao enviar imagem"); return null; }
     const { data } = supabase.storage.from("property-images").getPublicUrl(path);
     return data.publicUrl;
   };
 
-  return { properties, loading, fetchProperties, createProperty, updateProperty, deleteProperty, uploadImage };
+  return {
+    properties: query.data || [],
+    loading: query.isLoading,
+    isFetching: query.isFetching,
+    fetchProperties: () => qc.invalidateQueries({ queryKey: PROPERTIES_KEY }),
+    createProperty: async (p: Partial<Property>) => { try { return await createMut.mutateAsync(p); } catch { return null; } },
+    updateProperty: async (id: string, updates: Partial<Property>) => { try { await updateMut.mutateAsync({ id, updates }); return true; } catch { return false; } },
+    deleteProperty: async (id: string) => { try { await deleteMut.mutateAsync(id); return true; } catch { return false; } },
+    uploadImage,
+  };
 }
 
 export function useLeadProperties(leadId: string | null) {
   const { user } = useAuth();
-  const [items, setItems] = useState<(LeadProperty & { property: Property })[]>([]);
+  const qc = useQueryClient();
 
-  const fetch = useCallback(async () => {
-    if (!user || !leadId) { setItems([]); return; }
-    const { data } = await supabase
-      .from("lead_properties")
-      .select("*, property:properties(*)")
-      .eq("lead_id", leadId)
-      .order("created_at", { ascending: false });
-    setItems((data as any) || []);
-  }, [user, leadId]);
-
-  useEffect(() => { fetch(); }, [fetch]);
+  const query = useQuery({
+    queryKey: ["lead_properties", leadId],
+    enabled: !!user && !!leadId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("lead_properties")
+        .select("*, property:properties(*)")
+        .eq("lead_id", leadId!)
+        .order("created_at", { ascending: false });
+      return (data as any) || [];
+    },
+  });
 
   const link = async (propertyId: string, notes = "") => {
     if (!user || !leadId) return;
@@ -174,16 +206,21 @@ export function useLeadProperties(leadId: string | null) {
       return;
     }
     toast.success("Imóvel vinculado ao lead!");
-    fetch();
+    qc.invalidateQueries({ queryKey: ["lead_properties", leadId] });
   };
 
   const unlink = async (id: string) => {
     const { error } = await supabase.from("lead_properties").delete().eq("id", id);
     if (error) { toast.error("Erro ao desvincular"); return; }
-    fetch();
+    qc.invalidateQueries({ queryKey: ["lead_properties", leadId] });
   };
 
-  return { items, link, unlink, fetch };
+  return {
+    items: (query.data || []) as (LeadProperty & { property: Property })[],
+    link,
+    unlink,
+    fetch: () => qc.invalidateQueries({ queryKey: ["lead_properties", leadId] }),
+  };
 }
 
 export function suggestProperties(properties: Property[], lead: { interest?: string; business_type?: string; deal_value?: number; rent_value?: number }): Property[] {
