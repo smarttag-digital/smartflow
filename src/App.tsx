@@ -23,7 +23,20 @@ import SignupPage from "@/pages/SignupPage";
 import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound.tsx";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+      retry: 2,
+    },
+    mutations: {
+      retry: 0,
+    },
+  },
+});
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (

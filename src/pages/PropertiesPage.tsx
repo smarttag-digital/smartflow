@@ -6,6 +6,9 @@ import {
   PROPERTY_STATUS_OPTIONS, PROPERTY_STATUS_LABELS,
 } from "@/hooks/useProperties";
 import CurrencyInput, { formatBRL } from "@/components/CurrencyInput";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { GridSkeleton } from "@/components/SkeletonCard";
+import EmptyState from "@/components/EmptyState";
 
 const EMPTY: Partial<Property> = {
   title: "", property_type: "apartamento", business_type: "venda", status: "disponivel",
@@ -61,9 +64,6 @@ export default function PropertiesPage() {
     setUploading(false);
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-  }
 
   return (
     <div>
@@ -106,60 +106,21 @@ export default function PropertiesPage() {
       </div>
 
       {/* Cards grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <Home className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Nenhum imóvel cadastrado</p>
-        </div>
+      {loading ? (
+        <GridSkeleton cards={8} />
+      ) : filtered.length === 0 ? (
+        <EmptyState
+          icon={Home}
+          title="Nenhum imóvel cadastrado"
+          description={search || filterCity || filterType ? "Tente ajustar os filtros." : "Cadastre seu primeiro imóvel."}
+          action={{ label: "Novo imóvel", onClick: openNew }}
+        />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((p) => {
-            const statusCfg = PROPERTY_STATUS_OPTIONS.find(s => s.value === p.status);
-            const value = p.business_type === "locacao" ? p.rent_value : p.deal_value;
-            return (
-              <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-border/40 bg-card overflow-hidden hover:border-primary/40 transition-colors flex flex-col">
-                <div className="aspect-video bg-muted/30 relative">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
-                    </div>
-                  )}
-                  <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-medium border ${statusCfg?.color}`}>
-                    {statusCfg?.label}
-                  </span>
-                  <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary border border-primary/30">
-                    {p.business_type === "locacao" ? "Locação" : "Venda"}
-                  </span>
-                </div>
-                <div className="p-4 flex-1 flex flex-col">
-                  <h3 className="text-sm font-semibold text-foreground truncate">{p.title}</h3>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 truncate">
-                    <MapPin className="w-3 h-3 flex-shrink-0" />
-                    {[p.neighborhood, p.city].filter(Boolean).join(", ") || "—"}
-                  </p>
-                  <p className="text-base font-bold text-primary mt-2">{formatBRL(value || 0)}</p>
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                    {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
-                    {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
-                    {p.parking_spots > 0 && <span className="flex items-center gap-1"><Car className="w-3 h-3" />{p.parking_spots}</span>}
-                    {p.area_m2 > 0 && <span>{p.area_m2}m²</span>}
-                  </div>
-                  <div className="flex gap-2 mt-3 pt-3 border-t border-border/30">
-                    <button onClick={() => openEdit(p)} className="flex-1 text-xs py-1.5 rounded-md bg-muted/50 hover:bg-muted text-foreground flex items-center justify-center gap-1">
-                      <Edit className="w-3 h-3" /> Editar
-                    </button>
-                    <button onClick={() => handleDelete(p.id)} className="px-2 py-1.5 rounded-md bg-destructive/10 hover:bg-destructive/20 text-destructive">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+        <PropertiesInfiniteGrid
+          filtered={filtered}
+          onEdit={openEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       {/* Form modal */}
@@ -300,5 +261,72 @@ export default function PropertiesPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+function PropertiesInfiniteGrid({
+  filtered, onEdit, onDelete,
+}: {
+  filtered: Property[];
+  onEdit: (p: Property) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { visible, hasMore, sentinelRef, total, loaded } = useInfiniteScroll(filtered, 16);
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {visible.map((p) => {
+          const statusCfg = PROPERTY_STATUS_OPTIONS.find(s => s.value === p.status);
+          const value = p.business_type === "locacao" ? p.rent_value : p.deal_value;
+          return (
+            <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-border/40 bg-card overflow-hidden hover:border-primary/40 transition-colors flex flex-col">
+              <div className="aspect-video bg-muted/30 relative">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
+                  </div>
+                )}
+                <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-medium border ${statusCfg?.color}`}>
+                  {statusCfg?.label}
+                </span>
+                <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary border border-primary/30">
+                  {p.business_type === "locacao" ? "Locação" : "Venda"}
+                </span>
+              </div>
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="text-sm font-semibold text-foreground truncate">{p.title}</h3>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 truncate">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  {[p.neighborhood, p.city].filter(Boolean).join(", ") || "—"}
+                </p>
+                <p className="text-base font-bold text-primary mt-2">{formatBRL(value || 0)}</p>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                  {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
+                  {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
+                  {p.parking_spots > 0 && <span className="flex items-center gap-1"><Car className="w-3 h-3" />{p.parking_spots}</span>}
+                  {p.area_m2 > 0 && <span>{p.area_m2}m²</span>}
+                </div>
+                <div className="flex gap-2 mt-3 pt-3 border-t border-border/30">
+                  <button onClick={() => onEdit(p)} className="flex-1 text-xs py-1.5 rounded-md bg-muted/50 hover:bg-muted text-foreground flex items-center justify-center gap-1">
+                    <Edit className="w-3 h-3" /> Editar
+                  </button>
+                  <button onClick={() => onDelete(p.id)} className="px-2 py-1.5 rounded-md bg-destructive/10 hover:bg-destructive/20 text-destructive">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <div ref={sentinelRef} className="py-4 text-center text-xs text-muted-foreground">
+          Carregando mais... ({loaded}/{total})
+        </div>
+      )}
+    </>
   );
 }

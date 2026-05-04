@@ -1,7 +1,7 @@
 {
-  "name": "Smarflow CRM",
-  "short_name": "Smarflow",
-  "description": "CRM imobiliário Smarflow — leads, pipeline e financeiro",
+  "name": "SmartFlow CRM",
+  "short_name": "SmartFlow",
+  "description": "SmartFlow CRM — gestão de leads, pipeline e financeiro para imobiliárias",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

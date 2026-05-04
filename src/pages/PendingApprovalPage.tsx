@@ -31,7 +31,7 @@ export default function PendingApprovalPage() {
     <div className="min-h-screen flex items-center justify-center px-4"
       style={{ background: "linear-gradient(135deg, hsl(230 22% 7%), hsl(260 30% 12%), hsl(230 22% 7%))" }}>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md text-center">
-        <img src={logo} alt="Smarflow" className="w-20 h-20 object-contain mx-auto mb-6" />
+        <img src={logo} alt="SmartFlow" className="w-20 h-20 object-contain mx-auto mb-6" />
         <div className="glass-card p-8 space-y-4">
           <span className="text-4xl">{msg.icon}</span>
           <h1 className="text-xl font-bold text-foreground">{msg.title}</h1>

@@ -67,9 +67,9 @@ export default function LoginPage() {
         className="w-full max-w-md"
       >
         <div className="flex flex-col items-center mb-8">
-          <img src={logo} alt="Smarflow" className="w-20 h-20 object-contain mb-4" />
+          <img src={logo} alt="SmartFlow" className="w-20 h-20 object-contain mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Bem-vindo de volta</h1>
-          <p className="text-sm text-muted-foreground mt-1">Entre na sua conta Smarflow CRM</p>
+          <p className="text-sm text-muted-foreground mt-1">Entre na sua conta SmartFlow CRM</p>
         </div>
 
         <div className="glass-card p-6 space-y-4">
