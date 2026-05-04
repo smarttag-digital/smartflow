@@ -13,6 +13,10 @@ import {
 } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { ListSkeleton } from "@/components/SkeletonCard";
+import EmptyState from "@/components/EmptyState";
+import { Users } from "lucide-react";
 
 function ScoreBadge({ score }: { score: string }) {
   const cfg = SCORE_CONFIG[score];
@@ -229,55 +233,22 @@ export default function LeadsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-32">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
+          <ListSkeleton rows={6} />
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum lead encontrado</p>
-            <button onClick={() => setShowForm(true)} className="text-primary text-sm mt-2">Adicionar primeiro lead</button>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Nenhum lead encontrado"
+            description={search || filterScore !== "all" ? "Tente ajustar os filtros." : "Comece adicionando seu primeiro lead."}
+            action={{ label: "Adicionar lead", onClick: () => setShowForm(true) }}
+          />
         ) : (
-          <div className="flex-1 overflow-y-auto space-y-2">
-            {filtered.map((lead) => (
-              <motion.div key={lead.id} layout onClick={() => selectLead(lead)}
-                className={`glass-card-hover p-4 cursor-pointer ${selectedLead?.id === lead.id ? "border-primary/40" : ""}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3 className="text-sm font-semibold text-foreground truncate">{lead.name}</h3>
-                      <ScoreBadge score={lead.score} />
-                      <AlertIndicator lead={lead} />
-                      {isActionOverdue(lead) && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-destructive/15 text-destructive">⏰ Ação atrasada</span>
-                      )}
-                      {isActionToday(lead) && !isActionOverdue(lead) && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">📋 Ação hoje</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">{lead.interest}</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">{SOURCE_LABELS[lead.source] || lead.source}</span>
-                      <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">{STAGE_LABELS[lead.stage] || lead.stage}</span>
-                      <span className="text-[10px] text-primary/80 bg-primary/10 px-2 py-0.5 rounded">{lead.business_type === "locacao" ? "Locação" : "Venda"}</span>
-                      {lead.next_action && (
-                        <span className="text-[10px] text-foreground bg-accent/20 px-2 py-0.5 rounded">
-                          {NEXT_ACTION_OPTIONS.find(o => o.value === lead.next_action)?.label || lead.next_action}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); handleWhatsApp(lead, buildWhatsAppMessage(lead)); }}
-                      className="whatsapp-btn p-2 rounded-lg" title="Abrir WhatsApp">
-                      <MessageSquare className="w-4 h-4" />
-                    </button>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground hidden lg:block" />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <LeadsInfiniteList
+            filtered={filtered}
+            selectedLead={selectedLead}
+            onSelect={selectLead}
+            onWhatsApp={(lead) => handleWhatsApp(lead, buildWhatsAppMessage(lead))}
+            buildWhatsAppMessage={buildWhatsAppMessage}
+          />
         )}
       </div>
 
