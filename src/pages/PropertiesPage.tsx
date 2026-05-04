@@ -263,3 +263,70 @@ export default function PropertiesPage() {
     </div>
   );
 }
+
+function PropertiesInfiniteGrid({
+  filtered, onEdit, onDelete,
+}: {
+  filtered: Property[];
+  onEdit: (p: Property) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { visible, hasMore, sentinelRef, total, loaded } = useInfiniteScroll(filtered, 16);
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {visible.map((p) => {
+          const statusCfg = PROPERTY_STATUS_OPTIONS.find(s => s.value === p.status);
+          const value = p.business_type === "locacao" ? p.rent_value : p.deal_value;
+          return (
+            <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-xl border border-border/40 bg-card overflow-hidden hover:border-primary/40 transition-colors flex flex-col">
+              <div className="aspect-video bg-muted/30 relative">
+                {p.image_url ? (
+                  <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
+                  </div>
+                )}
+                <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-medium border ${statusCfg?.color}`}>
+                  {statusCfg?.label}
+                </span>
+                <span className="absolute top-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary border border-primary/30">
+                  {p.business_type === "locacao" ? "Locação" : "Venda"}
+                </span>
+              </div>
+              <div className="p-4 flex-1 flex flex-col">
+                <h3 className="text-sm font-semibold text-foreground truncate">{p.title}</h3>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 truncate">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  {[p.neighborhood, p.city].filter(Boolean).join(", ") || "—"}
+                </p>
+                <p className="text-base font-bold text-primary mt-2">{formatBRL(value || 0)}</p>
+                <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
+                  {p.bedrooms > 0 && <span className="flex items-center gap-1"><Bed className="w-3 h-3" />{p.bedrooms}</span>}
+                  {p.bathrooms > 0 && <span className="flex items-center gap-1"><Bath className="w-3 h-3" />{p.bathrooms}</span>}
+                  {p.parking_spots > 0 && <span className="flex items-center gap-1"><Car className="w-3 h-3" />{p.parking_spots}</span>}
+                  {p.area_m2 > 0 && <span>{p.area_m2}m²</span>}
+                </div>
+                <div className="flex gap-2 mt-3 pt-3 border-t border-border/30">
+                  <button onClick={() => onEdit(p)} className="flex-1 text-xs py-1.5 rounded-md bg-muted/50 hover:bg-muted text-foreground flex items-center justify-center gap-1">
+                    <Edit className="w-3 h-3" /> Editar
+                  </button>
+                  <button onClick={() => onDelete(p.id)} className="px-2 py-1.5 rounded-md bg-destructive/10 hover:bg-destructive/20 text-destructive">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+      {hasMore && (
+        <div ref={sentinelRef} className="py-4 text-center text-xs text-muted-foreground">
+          Carregando mais... ({loaded}/{total})
+        </div>
+      )}
+    </>
+  );
+}
