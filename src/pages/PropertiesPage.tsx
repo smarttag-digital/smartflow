@@ -6,6 +6,9 @@ import {
   PROPERTY_STATUS_OPTIONS, PROPERTY_STATUS_LABELS,
 } from "@/hooks/useProperties";
 import CurrencyInput, { formatBRL } from "@/components/CurrencyInput";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { GridSkeleton } from "@/components/SkeletonCard";
+import EmptyState from "@/components/EmptyState";
 
 const EMPTY: Partial<Property> = {
   title: "", property_type: "apartamento", business_type: "venda", status: "disponivel",
@@ -61,9 +64,6 @@ export default function PropertiesPage() {
     setUploading(false);
   };
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-  }
 
   return (
     <div>
