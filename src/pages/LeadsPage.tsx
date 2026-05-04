@@ -605,6 +605,65 @@ export default function LeadsPage() {
   );
 }
 
+function LeadsInfiniteList({
+  filtered, selectedLead, onSelect, onWhatsApp, buildWhatsAppMessage,
+}: {
+  filtered: Lead[];
+  selectedLead: Lead | null;
+  onSelect: (l: Lead) => void;
+  onWhatsApp: (l: Lead) => void;
+  buildWhatsAppMessage: (l: Lead) => string;
+}) {
+  const { visible, hasMore, sentinelRef, total, loaded } = useInfiniteScroll(filtered, 25);
+  return (
+    <div className="flex-1 overflow-y-auto space-y-2">
+      {visible.map((lead) => (
+        <motion.div key={lead.id} layout onClick={() => onSelect(lead)}
+          className={`glass-card-hover p-4 cursor-pointer ${selectedLead?.id === lead.id ? "border-primary/40" : ""}`}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <h3 className="text-sm font-semibold text-foreground truncate">{lead.name}</h3>
+                <ScoreBadge score={lead.score} />
+                <AlertIndicator lead={lead} />
+                {isActionOverdue(lead) && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-destructive/15 text-destructive">⏰ Ação atrasada</span>
+                )}
+                {isActionToday(lead) && !isActionOverdue(lead) && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/15 text-primary">📋 Ação hoje</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground truncate">{lead.interest}</p>
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">{SOURCE_LABELS[lead.source] || lead.source}</span>
+                <span className="text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">{STAGE_LABELS[lead.stage] || lead.stage}</span>
+                <span className="text-[10px] text-primary/80 bg-primary/10 px-2 py-0.5 rounded">{lead.business_type === "locacao" ? "Locação" : "Venda"}</span>
+                {lead.next_action && (
+                  <span className="text-[10px] text-foreground bg-accent/20 px-2 py-0.5 rounded">
+                    {NEXT_ACTION_OPTIONS.find(o => o.value === lead.next_action)?.label || lead.next_action}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <button onClick={(e) => { e.stopPropagation(); onWhatsApp(lead); }}
+                className="whatsapp-btn p-2 rounded-lg" title="Abrir WhatsApp">
+                <MessageSquare className="w-4 h-4" />
+              </button>
+              <ChevronRight className="w-4 h-4 text-muted-foreground hidden lg:block" />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+      {hasMore && (
+        <div ref={sentinelRef} className="py-4 text-center text-xs text-muted-foreground">
+          Carregando mais... ({loaded}/{total})
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Helper to insert interaction without the hook (for newly created leads)
 import { supabase } from "@/integrations/supabase/client";
 async function supabaseInsertInteraction(leadId: string, userId: string, message: string) {
