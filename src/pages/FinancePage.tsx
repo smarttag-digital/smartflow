@@ -62,7 +62,7 @@ export default function FinancePage() {
   const leadName = (id: string) => leads.find(l => l.id === id)?.name || "—";
   const partnerName = (id: string | null) => id ? (partners.find(p => p.id === id)?.name || "—") : null;
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  // loading is handled inline in the list; KPIs render with 0 while loading
 
   return (
     <div className="space-y-6">

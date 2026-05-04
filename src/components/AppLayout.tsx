@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
-  const companyName = profile?.company_name || "Smarflow CRM";
+  const companyName = profile?.company_name || "SmartFlow CRM";
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
         style={{ background: "linear-gradient(180deg, hsl(230 22% 9%), hsl(260 25% 10%))" }}>
         <div className={`flex items-center gap-3 p-4 border-b border-border/30 ${collapsed ? "justify-center" : ""}`}>
-          <img src={logo} alt="Smarflow" className="w-9 h-9 rounded-lg object-contain bg-white/5 p-1" />
+          <img src={logo} alt="SmartFlow" className="w-9 h-9 rounded-lg object-contain bg-white/5 p-1" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold text-foreground truncate">{companyName}</h1>
@@ -107,8 +107,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2 lg:hidden">
-            <img src={logo} alt="Smarflow" className="w-7 h-7 object-contain" />
-            <span className="text-sm font-bold text-foreground">Smarflow</span>
+            <img src={logo} alt="SmartFlow" className="w-7 h-7 object-contain" />
+            <span className="text-sm font-bold text-foreground">SmartFlow</span>
           </div>
           <div className="flex-1" />
 
