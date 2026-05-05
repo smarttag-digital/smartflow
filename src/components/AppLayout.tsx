@@ -10,7 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useLeads";
 import { useIsAdmin } from "@/hooks/useAccessControl";
 import { usePrivacy } from "@/contexts/PrivacyContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import BottomNav from "@/components/BottomNav";
+import { Link } from "react-router-dom";
 import logo from "@/assets/smartflow_logo.png";
 
 const NAV_ITEMS = [
