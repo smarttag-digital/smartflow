@@ -36,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
+  const { isTrialing, trialDaysLeft } = useSubscription();
   const companyName = profile?.company_name || "SmartFlow CRM";
 
   const initials = user?.user_metadata?.full_name
