@@ -29,12 +29,12 @@ export function useSubscription() {
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("subscriptions" as any)
+        .from("subscriptions")
         .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
-      return data as unknown as Subscription | null;
+      return data as Subscription | null;
     },
   });
 
