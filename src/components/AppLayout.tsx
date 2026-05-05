@@ -10,7 +10,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useLeads";
 import { useIsAdmin } from "@/hooks/useAccessControl";
 import { usePrivacy } from "@/contexts/PrivacyContext";
+import { useSubscription } from "@/hooks/useSubscription";
 import BottomNav from "@/components/BottomNav";
+import { Link } from "react-router-dom";
 import logo from "@/assets/smartflow_logo.png";
 
 const NAV_ITEMS = [
@@ -34,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
+  const { isTrialing, trialDaysLeft } = useSubscription();
   const companyName = profile?.company_name || "SmartFlow CRM";
 
   const initials = user?.user_metadata?.full_name
@@ -134,6 +137,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+        {isTrialing && trialDaysLeft <= 7 && (
+          <Link
+            to="/settings?tab=subscription"
+            className="block bg-gradient-to-r from-primary/15 to-purple-500/15 border-b border-primary/20 px-4 py-2 text-xs text-center hover:from-primary/25 hover:to-purple-500/25 transition-colors"
+          >
+            <span className="text-foreground font-medium">
+              {trialDaysLeft === 0 ? "Seu trial termina hoje!" : `${trialDaysLeft} ${trialDaysLeft === 1 ? "dia restante" : "dias restantes"} no seu trial`}
+            </span>
+            <span className="text-primary ml-2 font-semibold">Assinar agora →</span>
+          </Link>
+        )}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">{children}</div>
       </main>
 
