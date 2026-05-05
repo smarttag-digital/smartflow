@@ -418,6 +418,51 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trial_ends_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trial_ends_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -471,10 +516,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      expire_trials: { Args: never; Returns: undefined }
       get_user_status: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_account_status"]
       }
+      has_active_access: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -486,6 +533,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      subscription_plan: "free_trial" | "mensal" | "anual"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "expired"
+        | "canceled"
+        | "past_due"
       user_account_status: "pending" | "approved" | "rejected" | "blocked"
     }
     CompositeTypes: {
@@ -615,6 +669,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      subscription_plan: ["free_trial", "mensal", "anual"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "expired",
+        "canceled",
+        "past_due",
+      ],
       user_account_status: ["pending", "approved", "rejected", "blocked"],
     },
   },
