@@ -8,7 +8,7 @@ import TrialExpiredPage from "@/pages/TrialExpiredPage";
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { status, loading: statusLoading } = useUserStatus();
-  const { hasAccess, loading: subLoading, subscription } = useSubscription();
+  const { hasAccess, loading: subLoading, isAdmin, accessMode } = useSubscription();
   const location = useLocation();
 
   if (loading || statusLoading || subLoading) {
@@ -21,11 +21,14 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (!user) return <Navigate to="/login" replace />;
 
+  // Admin ignora completamente status e assinatura
+  if (isAdmin) return <>{children}</>;
+
   if (status && status !== "approved") return <PendingApprovalPage />;
 
-  // Trial expirado / sem assinatura ativa: bloqueia tudo, exceto a página de Settings (aba Assinatura)
+  // Bloqueado total: só permite Settings (para reativar)
   const isSettingsRoute = location.pathname.startsWith("/settings");
-  if (subscription && !hasAccess && !isSettingsRoute) {
+  if (accessMode === "blocked" && !hasAccess && !isSettingsRoute) {
     return <TrialExpiredPage />;
   }
 

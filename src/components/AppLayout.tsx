@@ -36,7 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { profile } = useProfile();
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
-  const { isTrialing, trialDaysLeft } = useSubscription();
+  const { isTrialing, trialDaysLeft, isReadOnly } = useSubscription();
   const companyName = profile?.company_name || "SmartFlow CRM";
 
   const initials = user?.user_metadata?.full_name
@@ -146,6 +146,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {trialDaysLeft === 0 ? "Seu trial termina hoje!" : `${trialDaysLeft} ${trialDaysLeft === 1 ? "dia restante" : "dias restantes"} no seu trial`}
             </span>
             <span className="text-primary ml-2 font-semibold">Assinar agora →</span>
+          </Link>
+        )}
+        {isReadOnly && (
+          <Link
+            to="/settings?tab=subscription"
+            className="block bg-destructive/15 border-b border-destructive/30 px-4 py-2 text-xs text-center hover:bg-destructive/25 transition-colors"
+          >
+            <span className="text-foreground font-medium">
+              Modo somente leitura — sua assinatura está inativa.
+            </span>
+            <span className="text-destructive ml-2 font-semibold">Reativar agora →</span>
           </Link>
         )}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6 pb-20 lg:pb-6">{children}</div>
