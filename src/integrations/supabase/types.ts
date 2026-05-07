@@ -517,6 +517,7 @@ export type Database = {
     }
     Functions: {
       expire_trials: { Args: never; Returns: undefined }
+      get_access_mode: { Args: { _user_id: string }; Returns: string }
       get_user_status: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["user_account_status"]
