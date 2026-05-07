@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export type SubscriptionPlan = "free_trial" | "mensal" | "anual";
 export type SubscriptionStatus = "trialing" | "active" | "expired" | "canceled" | "past_due";
+export type AccessMode = "full" | "read_only" | "blocked";
 
 export interface Subscription {
   id: string;
@@ -24,21 +25,27 @@ export function useSubscription() {
   const { user } = useAuth();
 
   const query = useQuery({
-    queryKey: ["subscription", user?.id],
+    queryKey: ["subscription-access", user?.id],
     enabled: !!user?.id,
     staleTime: 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subscriptions")
-        .select("*")
-        .eq("user_id", user!.id)
-        .maybeSingle();
-      if (error) throw error;
-      return data as Subscription | null;
+      const [subRes, modeRes, adminRes] = await Promise.all([
+        supabase.from("subscriptions").select("*").eq("user_id", user!.id).maybeSingle(),
+        supabase.rpc("get_access_mode", { _user_id: user!.id }),
+        supabase.rpc("has_role", { _user_id: user!.id, _role: "admin" }),
+      ]);
+      if (subRes.error) throw subRes.error;
+      return {
+        subscription: subRes.data as Subscription | null,
+        accessMode: ((modeRes.data as string) || "blocked") as AccessMode,
+        isAdmin: !!adminRes.data,
+      };
     },
   });
 
-  const sub = query.data;
+  const sub = query.data?.subscription ?? null;
+  const accessMode: AccessMode = query.data?.accessMode ?? "blocked";
+  const isAdmin = query.data?.isAdmin ?? false;
   const now = Date.now();
 
   const isTrialing =
@@ -50,7 +57,10 @@ export function useSubscription() {
     sub?.status === "active" &&
     (!sub.current_period_end || new Date(sub.current_period_end).getTime() > now);
 
-  const hasAccess = isTrialing || isActive;
+  // Admin sempre tem acesso total — independe de subscription
+  const hasAccess = isAdmin || accessMode === "full" || accessMode === "read_only";
+  const canMutate = isAdmin || accessMode === "full";
+  const isReadOnly = !isAdmin && accessMode === "read_only";
 
   const trialDaysLeft =
     sub?.trial_ends_at && isTrialing
@@ -61,6 +71,10 @@ export function useSubscription() {
     subscription: sub,
     loading: query.isLoading,
     hasAccess,
+    canMutate,
+    isReadOnly,
+    isAdmin,
+    accessMode,
     isTrialing,
     isActive,
     trialDaysLeft,
