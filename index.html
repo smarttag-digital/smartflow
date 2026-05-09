@@ -22,6 +22,22 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="SmartFlow CRM" />
     <meta name="twitter:description" content="CRM imobiliário SmartFlow — leads, pipeline e financeiro" />
+
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("smartflow.theme");
+          var mode = stored || "dark";
+          var resolved = mode === "auto"
+            ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+            : mode;
+          document.documentElement.classList.add(resolved);
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
 
   <body>

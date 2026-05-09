@@ -37,7 +37,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
   const { isTrialing, trialDaysLeft, isReadOnly } = useSubscription();
-  const companyName = profile?.company_name || "SmartFlow CRM";
+  const userDisplayName = user?.user_metadata?.full_name || profile?.full_name || user?.email || "";
+  const companyName = profile?.company_name?.trim() || userDisplayName;
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -58,20 +59,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <aside
-        className={`fixed lg:relative z-50 h-full flex flex-col border-r border-border/50 transition-all duration-300 ${
+        className={`fixed lg:relative z-50 h-full flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
           collapsed ? "w-[72px]" : "w-64"
-        } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
-        style={{ background: "linear-gradient(180deg, hsl(230 22% 9%), hsl(260 25% 10%))" }}>
-        <div className={`flex items-center gap-3 p-4 border-b border-border/30 ${collapsed ? "justify-center" : ""}`}>
-          <img src={logo} alt="SmartFlow" className="w-9 h-9 rounded-lg object-contain bg-white/5 p-1" />
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className={`flex items-center gap-3 p-4 border-b border-sidebar-border ${collapsed ? "justify-center" : ""}`}>
+          <img src={logo} alt="SmartFlow" className="w-9 h-9 rounded-lg object-contain bg-primary/10 p-1" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-bold text-foreground truncate">{companyName}</h1>
+              <h1 className="text-sm font-bold text-sidebar-foreground truncate">SmartFlow</h1>
               <p className="text-[10px] text-muted-foreground truncate">CRM Imobiliário</p>
             </div>
           )}
           <button onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md hover:bg-muted/50 text-muted-foreground">
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md hover:bg-sidebar-accent text-muted-foreground">
             <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
           </button>
           <button onClick={() => setMobileOpen(false)} className="lg:hidden text-muted-foreground">
@@ -109,9 +109,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={() => setMobileOpen(true)} className="lg:hidden text-muted-foreground">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-2">
             <img src={logo} alt="SmartFlow" className="w-7 h-7 object-contain" />
-            <span className="text-sm font-bold text-foreground">SmartFlow</span>
+            <span className="text-sm font-bold text-foreground tracking-tight">SmartFlow</span>
           </div>
           <div className="flex-1" />
 
@@ -129,9 +129,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[200px]">
-              {user?.user_metadata?.full_name || user?.email}
-            </span>
+            <div className="hidden sm:flex flex-col items-end leading-tight max-w-[220px]">
+              <span className="text-xs font-semibold text-foreground truncate w-full text-right">
+                {companyName}
+              </span>
+              {profile?.company_name && userDisplayName && profile.company_name.trim() !== userDisplayName && (
+                <span className="text-[10px] text-muted-foreground truncate w-full text-right">{userDisplayName}</span>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
               {initials}
             </div>

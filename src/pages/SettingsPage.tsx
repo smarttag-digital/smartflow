@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle } from "lucide-react";
+import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle, Palette, Sun, Moon, Monitor } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useTheme, type ThemeMode } from "@/contexts/ThemeContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -31,9 +32,10 @@ export default function SettingsPage() {
       </motion.div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full bg-muted/30 h-auto p-1">
+        <TabsList className="grid grid-cols-6 w-full bg-muted/30 h-auto p-1">
           <TabsTrigger value="profile" className="text-xs sm:text-sm gap-1.5"><User className="w-3.5 h-3.5" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
           <TabsTrigger value="company" className="text-xs sm:text-sm gap-1.5"><Building2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Empresa</span></TabsTrigger>
+          <TabsTrigger value="appearance" className="text-xs sm:text-sm gap-1.5"><Palette className="w-3.5 h-3.5" /><span className="hidden sm:inline">Aparência</span></TabsTrigger>
           <TabsTrigger value="whatsapp" className="text-xs sm:text-sm gap-1.5"><MessageSquare className="w-3.5 h-3.5" /><span className="hidden sm:inline">WhatsApp</span></TabsTrigger>
           <TabsTrigger value="subscription" className="text-xs sm:text-sm gap-1.5"><Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">Assinatura</span></TabsTrigger>
           <TabsTrigger value="security" className="text-xs sm:text-sm gap-1.5"><Shield className="w-3.5 h-3.5" /><span className="hidden sm:inline">Segurança</span></TabsTrigger>
@@ -41,6 +43,7 @@ export default function SettingsPage() {
 
         <TabsContent value="profile" className="mt-6"><ProfileTab /></TabsContent>
         <TabsContent value="company" className="mt-6"><CompanyTab /></TabsContent>
+        <TabsContent value="appearance" className="mt-6"><AppearanceTab /></TabsContent>
         <TabsContent value="whatsapp" className="mt-6"><WhatsAppTab /></TabsContent>
         <TabsContent value="subscription" className="mt-6"><SubscriptionTab /></TabsContent>
         <TabsContent value="security" className="mt-6"><SecurityTab /></TabsContent>
@@ -313,5 +316,55 @@ function SecurityTab() {
         </button>
       </motion.div>
     </div>
+  );
+}
+
+function AppearanceTab() {
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  const options: { value: ThemeMode; label: string; description: string; icon: any }[] = [
+    { value: "light", label: "Claro", description: "Visual limpo e profissional", icon: Sun },
+    { value: "dark", label: "Escuro", description: "Visual moderno e premium", icon: Moon },
+    { value: "auto", label: "Automático", description: "Segue o tema do sistema operacional", icon: Monitor },
+  ];
+
+  return (
+    <motion.div {...fadeUp} className="glass-card p-5 space-y-4">
+      <div>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Palette className="w-4 h-4 text-primary" /> Aparência do sistema</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Escolha o tema visual. Atualmente exibindo: <span className="text-foreground font-medium">{resolvedTheme === "dark" ? "Escuro" : "Claro"}</span>
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-3">
+        {options.map((opt) => {
+          const active = theme === opt.value;
+          const Icon = opt.icon;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={`relative flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all ${
+                active
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2 w-full">
+                <Icon className={`w-4 h-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                <span className="text-sm font-semibold flex-1">{opt.label}</span>
+                {active && <Check className="w-4 h-4 text-primary" />}
+              </div>
+              <p className="text-[11px] text-muted-foreground">{opt.description}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">
+        Sua preferência é salva automaticamente neste dispositivo.
+      </p>
+    </motion.div>
   );
 }
