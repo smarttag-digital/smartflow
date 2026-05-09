@@ -109,9 +109,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <button onClick={() => setMobileOpen(true)} className="lg:hidden text-muted-foreground">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-2">
             <img src={logo} alt="SmartFlow" className="w-7 h-7 object-contain" />
-            <span className="text-sm font-bold text-foreground">SmartFlow</span>
+            <span className="text-sm font-bold text-foreground tracking-tight">SmartFlow</span>
           </div>
           <div className="flex-1" />
 
@@ -129,9 +129,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground hidden sm:block truncate max-w-[200px]">
-              {user?.user_metadata?.full_name || user?.email}
-            </span>
+            <div className="hidden sm:flex flex-col items-end leading-tight max-w-[220px]">
+              <span className="text-xs font-semibold text-foreground truncate w-full text-right">
+                {companyName}
+              </span>
+              {profile?.company_name && userDisplayName && profile.company_name.trim() !== userDisplayName && (
+                <span className="text-[10px] text-muted-foreground truncate w-full text-right">{userDisplayName}</span>
+              )}
+            </div>
             <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
               {initials}
             </div>
