@@ -318,3 +318,53 @@ function SecurityTab() {
     </div>
   );
 }
+
+function AppearanceTab() {
+  const { theme, resolvedTheme, setTheme } = useTheme();
+
+  const options: { value: ThemeMode; label: string; description: string; icon: any }[] = [
+    { value: "light", label: "Claro", description: "Visual limpo e profissional", icon: Sun },
+    { value: "dark", label: "Escuro", description: "Visual moderno e premium", icon: Moon },
+    { value: "auto", label: "Automático", description: "Segue o tema do sistema operacional", icon: Monitor },
+  ];
+
+  return (
+    <motion.div {...fadeUp} className="glass-card p-5 space-y-4">
+      <div>
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Palette className="w-4 h-4 text-primary" /> Aparência do sistema</h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          Escolha o tema visual. Atualmente exibindo: <span className="text-foreground font-medium">{resolvedTheme === "dark" ? "Escuro" : "Claro"}</span>
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-3 gap-3">
+        {options.map((opt) => {
+          const active = theme === opt.value;
+          const Icon = opt.icon;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setTheme(opt.value)}
+              className={`relative flex flex-col items-start gap-2 p-4 rounded-xl border text-left transition-all ${
+                active
+                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                  : "border-border/60 bg-muted/20 hover:bg-muted/40 hover:border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2 w-full">
+                <Icon className={`w-4 h-4 ${active ? "text-primary" : "text-muted-foreground"}`} />
+                <span className="text-sm font-semibold flex-1">{opt.label}</span>
+                {active && <Check className="w-4 h-4 text-primary" />}
+              </div>
+              <p className="text-[11px] text-muted-foreground">{opt.description}</p>
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">
+        Sua preferência é salva automaticamente neste dispositivo.
+      </p>
+    </motion.div>
+  );
+}
