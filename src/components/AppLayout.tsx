@@ -59,20 +59,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <aside
-        className={`fixed lg:relative z-50 h-full flex flex-col border-r border-border/50 transition-all duration-300 ${
+        className={`fixed lg:relative z-50 h-full flex flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ${
           collapsed ? "w-[72px]" : "w-64"
-        } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
-        style={{ background: "linear-gradient(180deg, hsl(230 22% 9%), hsl(260 25% 10%))" }}>
-        <div className={`flex items-center gap-3 p-4 border-b border-border/30 ${collapsed ? "justify-center" : ""}`}>
-          <img src={logo} alt="SmartFlow" className="w-9 h-9 rounded-lg object-contain bg-white/5 p-1" />
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
+        <div className={`flex items-center gap-3 p-4 border-b border-sidebar-border ${collapsed ? "justify-center" : ""}`}>
+          <img src={logo} alt="SmartFlow" className="w-9 h-9 rounded-lg object-contain bg-primary/10 p-1" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-bold text-foreground truncate">{companyName}</h1>
+              <h1 className="text-sm font-bold text-sidebar-foreground truncate">SmartFlow</h1>
               <p className="text-[10px] text-muted-foreground truncate">CRM Imobiliário</p>
             </div>
           )}
           <button onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md hover:bg-muted/50 text-muted-foreground">
+            className="hidden lg:flex items-center justify-center w-6 h-6 rounded-md hover:bg-sidebar-accent text-muted-foreground">
             <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
           </button>
           <button onClick={() => setMobileOpen(false)} className="lg:hidden text-muted-foreground">
