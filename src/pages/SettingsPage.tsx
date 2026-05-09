@@ -32,9 +32,10 @@ export default function SettingsPage() {
       </motion.div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-5 w-full bg-muted/30 h-auto p-1">
+        <TabsList className="grid grid-cols-6 w-full bg-muted/30 h-auto p-1">
           <TabsTrigger value="profile" className="text-xs sm:text-sm gap-1.5"><User className="w-3.5 h-3.5" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
           <TabsTrigger value="company" className="text-xs sm:text-sm gap-1.5"><Building2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Empresa</span></TabsTrigger>
+          <TabsTrigger value="appearance" className="text-xs sm:text-sm gap-1.5"><Palette className="w-3.5 h-3.5" /><span className="hidden sm:inline">Aparência</span></TabsTrigger>
           <TabsTrigger value="whatsapp" className="text-xs sm:text-sm gap-1.5"><MessageSquare className="w-3.5 h-3.5" /><span className="hidden sm:inline">WhatsApp</span></TabsTrigger>
           <TabsTrigger value="subscription" className="text-xs sm:text-sm gap-1.5"><Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">Assinatura</span></TabsTrigger>
           <TabsTrigger value="security" className="text-xs sm:text-sm gap-1.5"><Shield className="w-3.5 h-3.5" /><span className="hidden sm:inline">Segurança</span></TabsTrigger>
@@ -42,6 +43,7 @@ export default function SettingsPage() {
 
         <TabsContent value="profile" className="mt-6"><ProfileTab /></TabsContent>
         <TabsContent value="company" className="mt-6"><CompanyTab /></TabsContent>
+        <TabsContent value="appearance" className="mt-6"><AppearanceTab /></TabsContent>
         <TabsContent value="whatsapp" className="mt-6"><WhatsAppTab /></TabsContent>
         <TabsContent value="subscription" className="mt-6"><SubscriptionTab /></TabsContent>
         <TabsContent value="security" className="mt-6"><SecurityTab /></TabsContent>
