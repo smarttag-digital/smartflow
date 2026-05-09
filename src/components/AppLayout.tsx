@@ -37,7 +37,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useIsAdmin();
   const { presentationMode, togglePresentationMode } = usePrivacy();
   const { isTrialing, trialDaysLeft, isReadOnly } = useSubscription();
-  const companyName = profile?.company_name || "SmartFlow CRM";
+  const userDisplayName = user?.user_metadata?.full_name || profile?.full_name || user?.email || "";
+  const companyName = profile?.company_name?.trim() || userDisplayName;
 
   const initials = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()
