@@ -1,10 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, Users, Kanban, DollarSign, Home } from "lucide-react";
+import { LayoutDashboard, Users, Activity, DollarSign, Home } from "lucide-react";
 
 const ITEMS = [
-  { to: "/", icon: LayoutDashboard, label: "Início" },
+  { to: "/", icon: LayoutDashboard, label: "Executivo" },
+  { to: "/operacional", icon: Activity, label: "Operação" },
   { to: "/leads", icon: Users, label: "Leads" },
-  { to: "/pipeline", icon: Kanban, label: "Pipeline" },
   { to: "/properties", icon: Home, label: "Imóveis" },
   { to: "/finance", icon: DollarSign, label: "$" },
 ];

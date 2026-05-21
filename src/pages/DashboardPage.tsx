@@ -146,8 +146,11 @@ export default function DashboardPage() {
     <div className="space-y-6 max-w-7xl">
       <motion.div {...fadeUp} className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Visão geral da sua operação de vendas</p>
+          <div className="px-2 py-0.5 inline-block rounded-md bg-accent/30 border border-border/50 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Operacional
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mt-1">Dashboard Operacional</h1>
+          <p className="text-sm text-muted-foreground">Atividades diárias, leads, pipeline e tarefas</p>
         </div>
         <div className="flex gap-1.5">
           {([["7d", "7 dias"], ["30d", "30 dias"], ["90d", "90 dias"], ["all", "Todos"]] as [Period, string][]).map(([v, label]) => (
