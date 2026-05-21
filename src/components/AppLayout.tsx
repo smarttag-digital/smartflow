@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Users, Kanban, BarChart3, Download, Zap, Settings,
   Menu, X, ChevronLeft, LogOut, ShieldCheck, Home, DollarSign, Handshake,
-  Eye, EyeOff,
+  Eye, EyeOff, Activity,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useLeads";
@@ -16,7 +16,8 @@ import { Link } from "react-router-dom";
 import logo from "@/assets/smartflow_logo.png";
 
 const NAV_ITEMS = [
-  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/", icon: LayoutDashboard, label: "Dashboard Executivo" },
+  { to: "/operacional", icon: Activity, label: "Dashboard Operacional" },
   { to: "/leads", icon: Users, label: "Leads" },
   { to: "/pipeline", icon: Kanban, label: "Pipeline" },
   { to: "/properties", icon: Home, label: "Imóveis" },
