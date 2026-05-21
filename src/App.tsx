@@ -11,6 +11,7 @@ import AppLayout from "@/components/AppLayout";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import UpdatePrompt from "@/components/UpdatePrompt";
 import DashboardPage from "@/pages/DashboardPage";
+import ExecutiveDashboardPage from "@/pages/ExecutiveDashboardPage";
 import LeadsPage from "@/pages/LeadsPage";
 import PipelinePage from "@/pages/PipelinePage";
 import PropertiesPage from "@/pages/PropertiesPage";
@@ -64,7 +65,8 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
-              <Route path="/" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
+              <Route path="/" element={<ProtectedLayout><ExecutiveDashboardPage /></ProtectedLayout>} />
+              <Route path="/operacional" element={<ProtectedLayout><DashboardPage /></ProtectedLayout>} />
               <Route path="/leads" element={<ProtectedLayout><LeadsPage /></ProtectedLayout>} />
               <Route path="/pipeline" element={<ProtectedLayout><PipelinePage /></ProtectedLayout>} />
               <Route path="/properties" element={<ProtectedLayout><PropertiesPage /></ProtectedLayout>} />
