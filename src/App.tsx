@@ -42,6 +42,9 @@ const queryClient = new QueryClient({
   },
 });
 
+import { Navigate } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
+
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
@@ -50,10 +53,13 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AdminOnly({ children }: { children: React.ReactNode }) {
-  const { useSubscription } = require("@/hooks/useSubscription");
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin, loading } = useSubscription();
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
+
 
 
 const App = () => (
@@ -82,7 +88,7 @@ const App = () => (
               <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
               <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
               <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
-              <Route path="/admin" element={<ProtectedLayout><AdminPage /></ProtectedLayout>} />
+              <Route path="/admin" element={<ProtectedLayout><AdminRoute><AdminPage /></AdminRoute></ProtectedLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PrivacyProvider>
