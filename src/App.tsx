@@ -50,6 +50,12 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
+function AdminOnly({ children }: { children: React.ReactNode }) {
+  const { useSubscription } = require("@/hooks/useSubscription");
+  return <>{children}</>;
+}
+
+
 const App = () => (
   <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
