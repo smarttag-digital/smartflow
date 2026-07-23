@@ -157,13 +157,14 @@ export function useLeads() {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("leads-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, () => {
+      .channel(`leads-realtime:${user.id}`, { config: { private: true } })
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads", filter: `user_id=eq.${user.id}` }, () => {
         qc.invalidateQueries({ queryKey: LEADS_KEY });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, qc]);
+
 
   const createMut = useMutation({
     mutationFn: async (lead: Partial<Lead>) => {

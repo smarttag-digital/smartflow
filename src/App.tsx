@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,6 +43,7 @@ const queryClient = new QueryClient({
   },
 });
 
+
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
@@ -49,6 +51,15 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
     </ProtectedRoute>
   );
 }
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin, loading } = useSubscription();
+  if (loading) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
+
 
 const App = () => (
   <ErrorBoundary>
@@ -76,7 +87,7 @@ const App = () => (
               <Route path="/reports" element={<ProtectedLayout><ReportsPage /></ProtectedLayout>} />
               <Route path="/automation" element={<ProtectedLayout><AutomationPage /></ProtectedLayout>} />
               <Route path="/settings" element={<ProtectedLayout><SettingsPage /></ProtectedLayout>} />
-              <Route path="/admin" element={<ProtectedLayout><AdminPage /></ProtectedLayout>} />
+              <Route path="/admin" element={<ProtectedLayout><AdminRoute><AdminPage /></AdminRoute></ProtectedLayout>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PrivacyProvider>
