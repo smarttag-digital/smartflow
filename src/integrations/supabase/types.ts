@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_credentials: {
+        Row: {
+          active: boolean
+          api_token: string
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string | null
+          secret_rotated_at: string
+          token_rotated_at: string
+          user_id: string
+          webhook_secret: string
+        }
+        Insert: {
+          active?: boolean
+          api_token: string
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          secret_rotated_at?: string
+          token_rotated_at?: string
+          user_id: string
+          webhook_secret: string
+        }
+        Update: {
+          active?: boolean
+          api_token?: string
+          created_at?: string
+          id?: string
+          label?: string
+          last_used_at?: string | null
+          secret_rotated_at?: string
+          token_rotated_at?: string
+          user_id?: string
+          webhook_secret?: string
+        }
+        Relationships: []
+      }
       automation_rules: {
         Row: {
           action: string
@@ -110,6 +149,42 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_logs: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string | null
+          message: string
+          request_type: string
+          source: string
+          status_code: number
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message?: string
+          request_type?: string
+          source?: string
+          status_code?: number
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          message?: string
+          request_type?: string
+          source?: string
+          status_code?: number
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       interactions: {
         Row: {
           created_at: string
@@ -185,7 +260,9 @@ export type Database = {
           created_at: string
           deal_value: number | null
           email: string | null
+          external_id: string | null
           id: string
+          idempotency_key: string | null
           interest: string | null
           last_contact: string | null
           last_response: string | null
@@ -212,7 +289,9 @@ export type Database = {
           created_at?: string
           deal_value?: number | null
           email?: string | null
+          external_id?: string | null
           id?: string
+          idempotency_key?: string | null
           interest?: string | null
           last_contact?: string | null
           last_response?: string | null
@@ -239,7 +318,9 @@ export type Database = {
           created_at?: string
           deal_value?: number | null
           email?: string | null
+          external_id?: string | null
           id?: string
+          idempotency_key?: string | null
           interest?: string | null
           last_contact?: string | null
           last_response?: string | null
@@ -516,6 +597,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_api_credentials: {
+        Args: never
+        Returns: {
+          active: boolean
+          api_token: string
+          created_at: string
+          id: string
+          label: string
+          last_used_at: string | null
+          secret_rotated_at: string
+          token_rotated_at: string
+          user_id: string
+          webhook_secret: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "api_credentials"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       expire_trials: { Args: never; Returns: undefined }
       get_access_mode: { Args: { _user_id: string }; Returns: string }
       get_user_status: {
@@ -531,6 +633,8 @@ export type Database = {
         Returns: boolean
       }
       mark_overdue_commissions: { Args: never; Returns: undefined }
+      regenerate_api_token: { Args: never; Returns: string }
+      regenerate_webhook_secret: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
