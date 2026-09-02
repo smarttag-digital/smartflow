@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle, Palette, Sun, Moon, Monitor } from "lucide-react";
+import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle, Palette, Sun, Moon, Monitor, Plug } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import IntegrationsTab from "@/components/IntegrationsTab";
 import { useProfile } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -32,11 +33,12 @@ export default function SettingsPage() {
       </motion.div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
-        <TabsList className="grid grid-cols-6 w-full bg-muted/30 h-auto p-1">
+        <TabsList className="grid grid-cols-7 w-full bg-muted/30 h-auto p-1">
           <TabsTrigger value="profile" className="text-xs sm:text-sm gap-1.5"><User className="w-3.5 h-3.5" /><span className="hidden sm:inline">Perfil</span></TabsTrigger>
           <TabsTrigger value="company" className="text-xs sm:text-sm gap-1.5"><Building2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Empresa</span></TabsTrigger>
           <TabsTrigger value="appearance" className="text-xs sm:text-sm gap-1.5"><Palette className="w-3.5 h-3.5" /><span className="hidden sm:inline">Aparência</span></TabsTrigger>
           <TabsTrigger value="whatsapp" className="text-xs sm:text-sm gap-1.5"><MessageSquare className="w-3.5 h-3.5" /><span className="hidden sm:inline">WhatsApp</span></TabsTrigger>
+          <TabsTrigger value="integrations" className="text-xs sm:text-sm gap-1.5"><Plug className="w-3.5 h-3.5" /><span className="hidden sm:inline">Integrações</span></TabsTrigger>
           <TabsTrigger value="subscription" className="text-xs sm:text-sm gap-1.5"><Crown className="w-3.5 h-3.5" /><span className="hidden sm:inline">Assinatura</span></TabsTrigger>
           <TabsTrigger value="security" className="text-xs sm:text-sm gap-1.5"><Shield className="w-3.5 h-3.5" /><span className="hidden sm:inline">Segurança</span></TabsTrigger>
         </TabsList>
@@ -45,6 +47,7 @@ export default function SettingsPage() {
         <TabsContent value="company" className="mt-6"><CompanyTab /></TabsContent>
         <TabsContent value="appearance" className="mt-6"><AppearanceTab /></TabsContent>
         <TabsContent value="whatsapp" className="mt-6"><WhatsAppTab /></TabsContent>
+        <TabsContent value="integrations" className="mt-6"><IntegrationsTab /></TabsContent>
         <TabsContent value="subscription" className="mt-6"><SubscriptionTab /></TabsContent>
         <TabsContent value="security" className="mt-6"><SecurityTab /></TabsContent>
       </Tabs>
