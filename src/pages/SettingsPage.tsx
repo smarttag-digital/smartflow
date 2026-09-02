@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle, Palette, Sun, Moon, Monitor } from "lucide-react";
+import { User, Phone, MessageSquare, Save, Building2, Crown, Shield, Check, Calendar, KeyRound, LogOut, AlertTriangle, Palette, Sun, Moon, Monitor, Plug } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import IntegrationsTab from "@/components/IntegrationsTab";
 import { useProfile } from "@/hooks/useLeads";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
