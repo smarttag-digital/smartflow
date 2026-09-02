@@ -51,6 +51,7 @@ export function useIntegration() {
       const { data, error } = await supabase
         .from("integration_logs")
         .select("id, request_type, source, status_code, success, message, lead_id, created_at")
+        .eq("user_id", user!.id)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
