@@ -23,6 +23,7 @@ export type Database = {
           label: string
           last_used_at: string | null
           secret_rotated_at: string
+          token_hash: string | null
           token_rotated_at: string
           user_id: string
           webhook_secret: string
@@ -35,6 +36,7 @@ export type Database = {
           label?: string
           last_used_at?: string | null
           secret_rotated_at?: string
+          token_hash?: string | null
           token_rotated_at?: string
           user_id: string
           webhook_secret: string
@@ -47,6 +49,7 @@ export type Database = {
           label?: string
           last_used_at?: string | null
           secret_rotated_at?: string
+          token_hash?: string | null
           token_rotated_at?: string
           user_id?: string
           webhook_secret?: string
@@ -152,6 +155,8 @@ export type Database = {
       integration_logs: {
         Row: {
           created_at: string
+          duration_ms: number | null
+          endpoint: string
           id: string
           lead_id: string | null
           message: string
@@ -163,6 +168,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
           id?: string
           lead_id?: string | null
           message?: string
@@ -174,6 +181,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
           id?: string
           lead_id?: string | null
           message?: string
@@ -597,27 +606,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      ensure_api_credentials: {
-        Args: never
-        Returns: {
-          active: boolean
-          api_token: string
-          created_at: string
-          id: string
-          label: string
-          last_used_at: string | null
-          secret_rotated_at: string
-          token_rotated_at: string
-          user_id: string
-          webhook_secret: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "api_credentials"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       expire_trials: { Args: never; Returns: undefined }
       get_access_mode: { Args: { _user_id: string }; Returns: string }
       get_user_status: {
@@ -633,8 +621,6 @@ export type Database = {
         Returns: boolean
       }
       mark_overdue_commissions: { Args: never; Returns: undefined }
-      regenerate_api_token: { Args: never; Returns: string }
-      regenerate_webhook_secret: { Args: never; Returns: string }
     }
     Enums: {
       app_role: "admin" | "user"
