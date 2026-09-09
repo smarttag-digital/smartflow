@@ -18,6 +18,8 @@ const RequestSchema = z.object({
   target_user_id: z.string().uuid().optional(),
 });
 
+type TenantOption = { user_id: string; full_name: string };
+
 type CredentialRow = {
   id: string;
   user_id: string;
@@ -200,8 +202,19 @@ Deno.serve(async (req) => {
     created_at: row.created_at,
     is_admin: isAdmin,
   };
+  let tenants: TenantOption[] | undefined;
+  if (isAdmin && parsed.data.action === "metadata") {
+    const { data: profiles } = await admin
+      .from("profiles")
+      .select("user_id, full_name")
+      .order("full_name", { ascending: true });
+    tenants = (profiles ?? []).map((profile) => ({
+      user_id: profile.user_id,
+      full_name: profile.full_name || "Usuário sem nome",
+    }));
+  }
   if (parsed.data.action === "reveal" || parsed.data.action.startsWith("regenerate_")) {
     return json({ ...base, api_token: apiToken, webhook_secret: webhookSecret });
   }
-  return json(base);
+  return json({ ...base, tenants });
 });

@@ -17,6 +17,7 @@ export interface ApiCredentials {
   last_used_at: string | null;
   created_at: string;
   is_admin: boolean;
+  tenants?: Array<{ user_id: string; full_name: string }>;
 }
 
 export interface IntegrationLog {
@@ -36,34 +37,37 @@ export const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/we
 
 type IntegrationAction = "metadata" | "reveal" | "regenerate_token" | "regenerate_secret" | "test_connection" | "create_test_lead";
 
-async function invokeIntegration<T>(action: IntegrationAction): Promise<T> {
-  const { data, error } = await supabase.functions.invoke("manage-integration", { body: { action } });
+async function invokeIntegration<T>(action: IntegrationAction, targetUserId?: string): Promise<T> {
+  const { data, error } = await supabase.functions.invoke("manage-integration", {
+    body: { action, ...(targetUserId ? { target_user_id: targetUserId } : {}) },
+  });
   if (error) throw new Error(error.message || "Falha ao acessar a integração");
   if (data?.error) throw new Error(data.error);
   return data as T;
 }
 
-export function useIntegration() {
+export function useIntegration(targetUserId?: string) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
   const credentials = useQuery({
-    queryKey: ["api-credentials", user?.id],
+    queryKey: ["api-credentials", user?.id, targetUserId],
     enabled: !!user?.id,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      return invokeIntegration<ApiCredentials>("metadata");
+      return invokeIntegration<ApiCredentials>("metadata", targetUserId);
     },
   });
 
   const logs = useQuery({
-    queryKey: ["integration-logs", user?.id],
+    queryKey: ["integration-logs", user?.id, targetUserId],
     enabled: !!user?.id,
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("integration_logs")
         .select("id, request_type, source, status_code, success, message, lead_id, endpoint, duration_ms, created_at")
-        .eq("user_id", user!.id)
+        .eq("user_id", targetUserId ?? user.id)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -72,36 +76,36 @@ export function useIntegration() {
   });
 
   const revealCredentials = useMutation({
-    mutationFn: () => invokeIntegration<ApiCredentials>("reveal"),
+    mutationFn: () => invokeIntegration<ApiCredentials>("reveal", targetUserId),
   });
 
   const regenerateToken = useMutation({
-    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_token"),
+    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_token", targetUserId),
     onSuccess: (data) => {
-      qc.setQueryData(["api-credentials", user?.id], data);
+      qc.setQueryData(["api-credentials", user?.id, targetUserId], data);
       toast.success("Novo API Token gerado. O anterior foi invalidado.");
     },
     onError: () => toast.error("Não foi possível regenerar o token"),
   });
 
   const regenerateSecret = useMutation({
-    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_secret"),
+    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_secret", targetUserId),
     onSuccess: (data) => {
-      qc.setQueryData(["api-credentials", user?.id], data);
+      qc.setQueryData(["api-credentials", user?.id, targetUserId], data);
       toast.success("Novo Webhook Secret gerado. O anterior foi invalidado.");
     },
     onError: () => toast.error("Não foi possível regenerar o secret"),
   });
 
   const testIntegration = useMutation({
-    mutationFn: () => invokeIntegration<{ success: boolean; message: string }>("test_connection"),
+    mutationFn: () => invokeIntegration<{ success: boolean; message: string }>("test_connection", targetUserId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
     },
   });
 
   const createTestLead = useMutation({
-    mutationFn: () => invokeIntegration<{ success: boolean; message: string; lead_id: string }>("create_test_lead"),
+    mutationFn: () => invokeIntegration<{ success: boolean; message: string; lead_id: string }>("create_test_lead", targetUserId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
