@@ -18,6 +18,8 @@ const RequestSchema = z.object({
   target_user_id: z.string().uuid().optional(),
 });
 
+type TenantOption = { user_id: string; full_name: string };
+
 type CredentialRow = {
   id: string;
   user_id: string;
@@ -91,17 +93,30 @@ Deno.serve(async (req) => {
     const webhookSecret = randomHex(32);
     const { data: inserted, error: insertError } = await admin
       .from("api_credentials")
-      .upsert({
+      .insert({
         user_id: targetUserId,
         api_token: await encryptCredential(apiToken, encryptionSecret),
         webhook_secret: await encryptCredential(webhookSecret, encryptionSecret),
         token_hash: await sha256Hex(apiToken),
         active: true,
-      }, { onConflict: "user_id" })
+      })
       .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
-      .single();
-    credential = inserted;
-    credentialError = insertError;
+      .maybeSingle();
+    if (inserted) {
+      credential = inserted;
+      credentialError = insertError;
+    } else if (insertError?.code === "23505") {
+      const retry = await admin
+        .from("api_credentials")
+        .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
+        .eq("user_id", targetUserId)
+        .eq("active", true)
+        .single();
+      credential = retry.data;
+      credentialError = retry.error;
+    } else {
+      credentialError = insertError;
+    }
   }
   if (credentialError || !credential) {
     console.error("manage-integration: falha ao carregar credencial", credentialError?.code);
@@ -189,8 +204,19 @@ Deno.serve(async (req) => {
     created_at: row.created_at,
     is_admin: isAdmin,
   };
+  let tenants: TenantOption[] | undefined;
+  if (isAdmin && parsed.data.action === "metadata") {
+    const { data: profiles } = await admin
+      .from("profiles")
+      .select("user_id, full_name")
+      .order("full_name", { ascending: true });
+    tenants = (profiles ?? []).map((profile) => ({
+      user_id: profile.user_id,
+      full_name: profile.full_name || "Usuário sem nome",
+    }));
+  }
   if (parsed.data.action === "reveal" || parsed.data.action.startsWith("regenerate_")) {
     return json({ ...base, api_token: apiToken, webhook_secret: webhookSecret });
   }
-  return json(base);
+  return json({ ...base, tenants });
 });

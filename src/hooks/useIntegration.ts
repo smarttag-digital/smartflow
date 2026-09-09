@@ -7,13 +7,17 @@ export interface ApiCredentials {
   id: string;
   user_id: string;
   label: string;
-  api_token: string;
-  webhook_secret: string;
+  token_masked: string;
+  secret_masked: string;
+  api_token?: string;
+  webhook_secret?: string;
   active: boolean;
   token_rotated_at: string;
   secret_rotated_at: string;
   last_used_at: string | null;
   created_at: string;
+  is_admin: boolean;
+  tenants?: Array<{ user_id: string; full_name: string }>;
 }
 
 export interface IntegrationLog {
@@ -24,34 +28,46 @@ export interface IntegrationLog {
   success: boolean;
   message: string;
   lead_id: string | null;
+  endpoint: string;
+  duration_ms: number | null;
   created_at: string;
 }
 
 export const WEBHOOK_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-leads`;
 
-export function useIntegration() {
+type IntegrationAction = "metadata" | "reveal" | "regenerate_token" | "regenerate_secret" | "test_connection" | "create_test_lead";
+
+async function invokeIntegration<T>(action: IntegrationAction, targetUserId?: string): Promise<T> {
+  const { data, error } = await supabase.functions.invoke("manage-integration", {
+    body: { action, ...(targetUserId ? { target_user_id: targetUserId } : {}) },
+  });
+  if (error) throw new Error(error.message || "Falha ao acessar a integração");
+  if (data?.error) throw new Error(data.error);
+  return data as T;
+}
+
+export function useIntegration(targetUserId?: string) {
   const { user } = useAuth();
   const qc = useQueryClient();
 
   const credentials = useQuery({
-    queryKey: ["api-credentials", user?.id],
+    queryKey: ["api-credentials", user?.id, targetUserId],
     enabled: !!user?.id,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("ensure_api_credentials");
-      if (error) throw error;
-      return (Array.isArray(data) ? data[0] : data) as ApiCredentials;
+      return invokeIntegration<ApiCredentials>("metadata", targetUserId);
     },
   });
 
   const logs = useQuery({
-    queryKey: ["integration-logs", user?.id],
+    queryKey: ["integration-logs", user?.id, targetUserId],
     enabled: !!user?.id,
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("integration_logs")
-        .select("id, request_type, source, status_code, success, message, lead_id, created_at")
-        .eq("user_id", user!.id)
+        .select("id, request_type, source, status_code, success, message, lead_id, endpoint, duration_ms, created_at")
+        .eq("user_id", targetUserId ?? user.id)
         .order("created_at", { ascending: false })
         .limit(30);
       if (error) throw error;
@@ -59,47 +75,42 @@ export function useIntegration() {
     },
   });
 
+  const revealCredentials = useMutation({
+    mutationFn: () => invokeIntegration<ApiCredentials>("reveal", targetUserId),
+  });
+
   const regenerateToken = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.rpc("regenerate_api_token");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["api-credentials"] });
+    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_token", targetUserId),
+    onSuccess: (data) => {
+      qc.setQueryData(["api-credentials", user?.id, targetUserId], data);
       toast.success("Novo API Token gerado. O anterior foi invalidado.");
     },
     onError: () => toast.error("Não foi possível regenerar o token"),
   });
 
   const regenerateSecret = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.rpc("regenerate_webhook_secret");
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["api-credentials"] });
+    mutationFn: () => invokeIntegration<ApiCredentials>("regenerate_secret", targetUserId),
+    onSuccess: (data) => {
+      qc.setQueryData(["api-credentials", user?.id, targetUserId], data);
       toast.success("Novo Webhook Secret gerado. O anterior foi invalidado.");
     },
     onError: () => toast.error("Não foi possível regenerar o secret"),
   });
 
   const testIntegration = useMutation({
-    mutationFn: async () => {
-      const token = credentials.data?.api_token;
-      if (!token) throw new Error("Credenciais não carregadas");
-      const res = await fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ teste: true }),
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.success) throw new Error(body.message || `Falha (HTTP ${res.status})`);
-      return body as { success: boolean; message: string };
-    },
+    mutationFn: () => invokeIntegration<{ success: boolean; message: string }>("test_connection", targetUserId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
     },
   });
 
-  return { credentials, logs, regenerateToken, regenerateSecret, testIntegration };
+  const createTestLead = useMutation({
+    mutationFn: () => invokeIntegration<{ success: boolean; message: string; lead_id: string }>("create_test_lead", targetUserId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["integration-logs"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+  });
+
+  return { credentials, logs, revealCredentials, regenerateToken, regenerateSecret, testIntegration, createTestLead };
 }

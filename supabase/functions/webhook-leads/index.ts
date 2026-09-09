@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
+import { decryptCredential, hmacHex, sha256Hex, timingSafeEqual } from "../_shared/integrationCrypto.ts";
 
 const headers = {
   ...corsHeaders,
@@ -19,6 +20,7 @@ const LeadSchema = z
     email: z.string().trim().max(255).optional().default(""),
     telefone: z.string().trim().min(6).max(30),
     tipo_de_negocio: z.string().trim().max(30).optional().default("venda"),
+    tipo_negocio: z.string().trim().max(30).optional(),
     tipo_de_imovel: z.string().trim().max(60).optional().default(""),
     valor: z.union([z.number(), z.string()]).optional(),
     cidade: z.string().trim().max(80).optional().default(""),
@@ -44,32 +46,21 @@ function toNumber(v: unknown): number {
   return 0;
 }
 
-async function hmacHex(secret: string, body: string) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
-  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function timingSafeEqual(a: string, b: string) {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 Deno.serve(async (req) => {
+  const startedAt = Date.now();
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return json({ success: false, message: "Método não permitido" }, 405);
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const encryptionSecret = Deno.env.get("SMARTFLOW_CREDENTIALS_ENCRYPTION_KEY");
+  if (!supabaseUrl || !serviceKey || !encryptionSecret) {
+    console.error("webhook-leads: configuração interna ausente");
+    return json({ success: false, message: "Integração temporariamente indisponível" }, 503);
+  }
   const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    supabaseUrl,
+    serviceKey,
     { auth: { persistSession: false } },
   );
 
@@ -83,7 +74,7 @@ Deno.serve(async (req) => {
   const { data: cred } = await admin
     .from("api_credentials")
     .select("id, user_id, webhook_secret, active")
-    .eq("api_token", token)
+    .eq("token_hash", await sha256Hex(token))
     .eq("active", true)
     .maybeSingle();
 
@@ -106,19 +97,20 @@ Deno.serve(async (req) => {
       success,
       message: message.slice(0, 300),
       lead_id: leadId ?? null,
+      endpoint: "/functions/v1/webhook-leads",
+      duration_ms: Date.now() - startedAt,
     });
   };
 
   const raw = await req.text();
 
-  // 2) Assinatura HMAC (obrigatória quando o header é enviado)
+  // 2) Assinatura HMAC obrigatória
   const signature = req.headers.get("x-smartflow-signature");
-  if (signature) {
-    const expected = await hmacHex(cred.webhook_secret as string, raw);
-    if (!timingSafeEqual(signature.replace(/^sha256=/, "").trim(), expected)) {
-      await log(401, false, "Assinatura inválida", "");
-      return json({ success: false, message: "Assinatura inválida" }, 401);
-    }
+  const webhookSecret = await decryptCredential(cred.webhook_secret as string, encryptionSecret);
+  const expected = await hmacHex(webhookSecret, raw);
+  if (!signature || !timingSafeEqual(signature.replace(/^sha256=/, "").trim(), expected)) {
+    await log(401, false, "Assinatura ausente ou inválida", "");
+    return json({ success: false, message: "Assinatura ausente ou inválida" }, 401);
   }
 
   // 3) Rate limiting simples (60 req/min por tenant)
@@ -129,6 +121,7 @@ Deno.serve(async (req) => {
     .eq("user_id", userId)
     .gte("created_at", since);
   if ((count ?? 0) > 60) {
+    await log(429, false, "Limite de requisições excedido", "");
     return json({ success: false, message: "Muitas requisições. Tente novamente em instantes." }, 429);
   }
 
@@ -173,8 +166,9 @@ Deno.serve(async (req) => {
   }
 
   const value = toNumber(d.valor);
-  const businessType = ["venda", "locacao", "aluguel"].includes(String(d.tipo_de_negocio).toLowerCase())
-    ? String(d.tipo_de_negocio).toLowerCase() === "aluguel" ? "locacao" : String(d.tipo_de_negocio).toLowerCase()
+  const requestedBusinessType = d.tipo_negocio || d.tipo_de_negocio;
+  const businessType = ["venda", "locacao", "aluguel"].includes(String(requestedBusinessType).toLowerCase())
+    ? String(requestedBusinessType).toLowerCase() === "aluguel" ? "locacao" : String(requestedBusinessType).toLowerCase()
     : "venda";
 
   const interestParts = [d.tipo_de_imovel, d.bairro, d.cidade].filter(Boolean);
