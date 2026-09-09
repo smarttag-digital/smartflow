@@ -97,11 +97,22 @@ Deno.serve(async (req) => {
         webhook_secret: await encryptCredential(webhookSecret, encryptionSecret),
         token_hash: await sha256Hex(apiToken),
         active: true,
-      }, { onConflict: "user_id" })
+      }, { onConflict: "user_id", ignoreDuplicates: true })
       .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
-      .single();
-    credential = inserted;
-    credentialError = insertError;
+      .maybeSingle();
+    if (inserted) {
+      credential = inserted;
+      credentialError = insertError;
+    } else {
+      const retry = await admin
+        .from("api_credentials")
+        .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
+        .eq("user_id", targetUserId)
+        .eq("active", true)
+        .single();
+      credential = retry.data;
+      credentialError = retry.error;
+    }
   }
   if (credentialError || !credential) {
     console.error("manage-integration: falha ao carregar credencial", credentialError?.code);
