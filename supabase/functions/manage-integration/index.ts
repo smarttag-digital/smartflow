@@ -93,19 +93,19 @@ Deno.serve(async (req) => {
     const webhookSecret = randomHex(32);
     const { data: inserted, error: insertError } = await admin
       .from("api_credentials")
-      .upsert({
+      .insert({
         user_id: targetUserId,
         api_token: await encryptCredential(apiToken, encryptionSecret),
         webhook_secret: await encryptCredential(webhookSecret, encryptionSecret),
         token_hash: await sha256Hex(apiToken),
         active: true,
-      }, { onConflict: "user_id", ignoreDuplicates: true })
+      })
       .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
       .maybeSingle();
     if (inserted) {
       credential = inserted;
       credentialError = insertError;
-    } else {
+    } else if (insertError?.code === "23505") {
       const retry = await admin
         .from("api_credentials")
         .select("id, user_id, label, api_token, webhook_secret, active, token_rotated_at, secret_rotated_at, last_used_at, created_at")
@@ -114,6 +114,8 @@ Deno.serve(async (req) => {
         .single();
       credential = retry.data;
       credentialError = retry.error;
+    } else {
+      credentialError = insertError;
     }
   }
   if (credentialError || !credential) {
