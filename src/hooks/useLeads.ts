@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useAccessControl";
 import { toast } from "sonner";
 
 export interface Lead {
@@ -138,6 +139,7 @@ const LEADS_KEY = ["leads"] as const;
 
 export function useLeads() {
   const { user } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const qc = useQueryClient();
 
   const query = useQuery({
@@ -156,14 +158,17 @@ export function useLeads() {
   // Realtime → invalidate cache (revalida automaticamente)
   useEffect(() => {
     if (!user) return;
+    const changeFilter = isAdmin
+      ? { event: "*" as const, schema: "public", table: "leads" }
+      : { event: "*" as const, schema: "public", table: "leads", filter: `user_id=eq.${user.id}` };
     const channel = supabase
       .channel(`leads-realtime:${user.id}`, { config: { private: true } })
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads", filter: `user_id=eq.${user.id}` }, () => {
+      .on("postgres_changes", changeFilter, () => {
         qc.invalidateQueries({ queryKey: LEADS_KEY });
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, qc]);
+  }, [user, isAdmin, qc]);
 
 
   const createMut = useMutation({
