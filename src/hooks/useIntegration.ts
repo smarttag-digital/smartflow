@@ -101,6 +101,7 @@ export function useIntegration(targetUserId?: string) {
     mutationFn: () => invokeIntegration<{ success: boolean; message: string }>("test_connection", targetUserId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
+      qc.invalidateQueries({ queryKey: ["api-credentials"] });
     },
   });
 
@@ -109,6 +110,7 @@ export function useIntegration(targetUserId?: string) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["integration-logs"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["api-credentials"] });
     },
   });
 
