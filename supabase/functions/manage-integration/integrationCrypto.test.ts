@@ -1,5 +1,5 @@
 import { assertEquals, assertNotEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { decryptCredential, encryptCredential, hmacHex, sha256Hex, timingSafeEqual } from "./integrationCrypto.ts";
+import { decryptCredential, encryptCredential, hmacHex, sha256Hex, timingSafeEqual } from "../_shared/integrationCrypto.ts";
 
 Deno.test("encrypts and decrypts credentials without storing plaintext", async () => {
   const plaintext = "sfk_example-sensitive-value";
