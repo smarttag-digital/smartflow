@@ -85,7 +85,7 @@ export const NEXT_ACTION_OPTIONS = [
 
 export const LOST_REASON_OPTIONS = [
   { value: "comprou_com_outro", label: "Comprou com outro corretor" },
-  { value: "nao_quer", label: "Não quer mais" },
+  { value: "nao_quer", label: "Não tem interesse" },
   { value: "nao_respondeu", label: "Não respondeu" },
   { value: "fora_do_perfil", label: "Fora do perfil" },
   { value: "outro", label: "Outro motivo" },
@@ -136,6 +136,7 @@ export function openWhatsApp(phone: string, message?: string) {
 }
 
 const LEADS_KEY = ["leads"] as const;
+export const PIPELINE_LOST_REASON_OPTIONS = LOST_REASON_OPTIONS.filter(option => option.value !== "outro");
 
 export function useLeads() {
   const { user } = useAuth();
@@ -209,10 +210,20 @@ export function useLeads() {
   });
 
   const updateMut = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Lead> }) => {
-      const { error } = await supabase.from("leads").update(updates as any).eq("id", id);
+    mutationFn: async ({ id, updates, recordLoss = false }: { id: string; updates: Partial<Lead>; recordLoss?: boolean }) => {
+      if (!user) throw new Error("Não autenticado");
+      if (recordLoss && !PIPELINE_LOST_REASON_OPTIONS.some(option => option.value === updates.lost_reason)) {
+        throw new Error("Selecione um motivo válido");
+      }
+      const { data, error } = recordLoss
+        ? await supabase.rpc("mark_lead_lost", { _lead_id: id, _reason: updates.lost_reason || "" }).single()
+        : await supabase.from("leads").update(updates as any).eq("id", id).eq("user_id", user.id).select().single();
       if (error) throw error;
-      return { id, updates };
+      if (!data || data.id !== id || (updates.stage && data.stage !== updates.stage)
+        || (updates.lost_reason && data.lost_reason !== updates.lost_reason)) {
+        throw new Error("A alteração não foi persistida");
+      }
+      return data as Lead;
     },
     onMutate: async ({ id, updates }) => {
       await qc.cancelQueries({ queryKey: LEADS_KEY });
@@ -220,9 +231,14 @@ export function useLeads() {
       qc.setQueryData<Lead[]>(LEADS_KEY, previous.map(l => l.id === id ? { ...l, ...updates } : l));
       return { previous };
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.previous) qc.setQueryData(LEADS_KEY, ctx.previous);
-      toast.error("Erro ao atualizar lead");
+    onError: (_e, { id }, ctx) => {
+      const previousLead = ctx?.previous.find(lead => lead.id === id);
+      if (previousLead) qc.setQueryData<Lead[]>(LEADS_KEY, current => (current || []).map(lead => lead.id === id ? previousLead : lead));
+      toast.error("Não foi possível salvar o lead. Verifique sua permissão e tente novamente.");
+    },
+    onSuccess: (savedLead) => {
+      qc.setQueryData<Lead[]>(LEADS_KEY, current => (current || []).map(lead => lead.id === savedLead.id ? savedLead : lead));
+      qc.invalidateQueries({ queryKey: ["interactions", savedLead.id] });
     },
     onSettled: () => { qc.invalidateQueries({ queryKey: LEADS_KEY }); },
   });
@@ -258,6 +274,9 @@ export function useLeads() {
     },
     updateLead: async (id: string, updates: Partial<Lead>): Promise<boolean> => {
       try { await updateMut.mutateAsync({ id, updates }); return true; } catch { return false; }
+    },
+    markLeadLost: async (id: string, reason: string): Promise<boolean> => {
+      try { await updateMut.mutateAsync({ id, updates: { stage: "lead_perdido", lost_reason: reason }, recordLoss: true }); return true; } catch { return false; }
     },
     deleteLead: async (id: string): Promise<boolean> => {
       try { await deleteMut.mutateAsync(id); return true; } catch { return false; }

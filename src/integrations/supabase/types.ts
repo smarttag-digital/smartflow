@@ -620,6 +620,44 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_lead_lost: {
+        Args: { _lead_id: string; _reason: string }
+        Returns: {
+          assigned_to: string | null
+          business_type: string | null
+          commission_percent: number | null
+          commission_value: number | null
+          contract_duration: string | null
+          created_at: string
+          deal_value: number | null
+          email: string | null
+          external_id: string | null
+          id: string
+          idempotency_key: string | null
+          interest: string | null
+          last_contact: string | null
+          last_response: string | null
+          lost_reason: string | null
+          name: string
+          next_action: string | null
+          next_action_date: string | null
+          notes: string | null
+          phone: string
+          rent_value: number | null
+          score: string
+          source: string
+          stage: string
+          tags: string[] | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "leads"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       mark_overdue_commissions: { Args: never; Returns: undefined }
     }
     Enums: {

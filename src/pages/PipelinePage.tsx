@@ -1,27 +1,43 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { MessageSquare, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  useLeads, useInteractions, Lead, STAGE_LABELS, SCORE_CONFIG, LOST_REASON_OPTIONS,
+  useLeads, STAGE_LABELS, SCORE_CONFIG, LOST_REASON_OPTIONS, PIPELINE_LOST_REASON_OPTIONS,
   getAlertLevel, openWhatsApp,
 } from "@/hooks/useLeads";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const STAGES = ["novo", "atendimento", "envio_imoveis", "visita", "proposta", "cca", "fechamento", "lead_perdido"];
 
 export default function PipelinePage() {
-  const { leads, loading, updateLead } = useLeads();
+  const { leads, loading, updateLead, markLeadLost } = useLeads();
+  const { user } = useAuth();
+  const { canMutate } = useSubscription();
   const [lostDialog, setLostDialog] = useState<{ leadId: string; fromStage: string } | null>(null);
   const [lostReason, setLostReason] = useState("");
+  const [savingLoss, setSavingLoss] = useState(false);
+  const [lossError, setLossError] = useState("");
+  const savingRef = useRef(false);
+  const closeLostDialog = () => {
+    if (savingRef.current) return;
+    setLostDialog(null);
+    setLostReason("");
+    setLossError("");
+  };
 
   const onDragEnd = async (result: DropResult) => {
     if (!result.destination) return;
     const leadId = result.draggableId;
     const newStage = result.destination.droppableId;
     const lead = leads.find(l => l.id === leadId);
-    if (!lead || lead.stage === newStage) return;
+    if (!lead || lead.stage === newStage || lead.user_id !== user?.id || !canMutate || savingRef.current) return;
 
     if (newStage === "lead_perdido") {
+      setLostReason("");
+      setLossError("");
       setLostDialog({ leadId, fromStage: lead.stage });
       return;
     }
@@ -30,10 +46,24 @@ export default function PipelinePage() {
   };
 
   const confirmLost = async () => {
-    if (!lostDialog || !lostReason) return;
-    await updateLead(lostDialog.leadId, { stage: "lead_perdido", lost_reason: lostReason });
-    setLostDialog(null);
-    setLostReason("");
+    if (!lostDialog || savingRef.current || !PIPELINE_LOST_REASON_OPTIONS.some(option => option.value === lostReason)) return;
+    savingRef.current = true;
+    setSavingLoss(true);
+    setLossError("");
+    try {
+      const saved = await markLeadLost(lostDialog.leadId, lostReason);
+      if (saved) {
+        setLostDialog(null);
+        setLostReason("");
+      } else {
+        setLossError("Não foi possível salvar. O lead permanece na etapa anterior; tente novamente.");
+      }
+    } catch {
+      setLossError("Não foi possível salvar. Tente novamente.");
+    } finally {
+      savingRef.current = false;
+      setSavingLoss(false);
+    }
   };
 
   if (loading) {
@@ -84,7 +114,8 @@ export default function PipelinePage() {
                       {stageLeads.map((lead, index) => {
                         const alert = getAlertLevel(lead);
                         return (
-                          <Draggable key={lead.id} draggableId={lead.id} index={index}>
+                          <Draggable key={lead.id} draggableId={lead.id} index={index}
+                            isDragDisabled={!canMutate || lead.user_id !== user?.id || savingLoss || lead.id.startsWith("tmp-")}>
                             {(provided, snapshot) => (
                               <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                                 className={`p-3 rounded-lg border transition-all ${
@@ -140,26 +171,26 @@ export default function PipelinePage() {
         {lostDialog && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => { setLostDialog(null); setLostReason(""); }}>
+            onClick={closeLostDialog}>
             <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              role="dialog" aria-modal="true" aria-label="Motivo da Perda"
               className="glass-card p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-foreground">Motivo da Perda</h3>
-                <button onClick={() => { setLostDialog(null); setLostReason(""); }}><X className="w-5 h-5 text-muted-foreground" /></button>
+                <Button variant="ghost" size="icon" aria-label="Fechar" disabled={savingLoss} onClick={closeLostDialog}><X className="w-5 h-5 text-muted-foreground" /></Button>
               </div>
               <div className="space-y-2 mb-4">
-                {LOST_REASON_OPTIONS.map((o) => (
-                  <button key={o.value} onClick={() => setLostReason(o.value)}
+                {PIPELINE_LOST_REASON_OPTIONS.map((o) => (
+                  <Button variant="outline" disabled={savingLoss} key={o.value} onClick={() => setLostReason(o.value)}
                     className={`w-full text-left px-3 py-2.5 rounded-lg text-sm border transition-colors ${lostReason === o.value ? "bg-primary/15 text-primary border-primary/30" : "border-border/50 text-foreground hover:bg-muted/50"}`}>
                     {o.label}
-                  </button>
+                  </Button>
                 ))}
               </div>
+              {lossError && <p role="alert" className="text-sm text-destructive mb-4">{lossError}</p>}
               <div className="flex gap-2">
-                <button onClick={() => { setLostDialog(null); setLostReason(""); }}
-                  className="flex-1 py-2 rounded-lg text-sm border border-border/50 text-muted-foreground">Cancelar</button>
-                <button onClick={confirmLost} disabled={!lostReason}
-                  className="flex-1 py-2 rounded-lg text-sm bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 disabled:opacity-50">Confirmar</button>
+                <Button variant="outline" disabled={savingLoss} onClick={closeLostDialog} className="flex-1">Cancelar</Button>
+                <Button variant="destructive" onClick={confirmLost} disabled={savingLoss || !PIPELINE_LOST_REASON_OPTIONS.some(option => option.value === lostReason)} className="flex-1">{savingLoss ? "Salvando…" : "Confirmar"}</Button>
               </div>
             </motion.div>
           </motion.div>
